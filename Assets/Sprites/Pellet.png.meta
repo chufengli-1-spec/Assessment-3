@@ -3,8 +3,8 @@ guid: 348eb18bf7ffbe34db896743f508def6
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 3050568017909115437
-    second: Normal pellet_0
+      213: -8357494700477734146
+    second: Pellet_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -47,13 +47,13 @@ TextureImporter:
   lightmap: 0
   compressionQuality: 50
   spriteMode: 2
-  spriteExtrude: 1
+  spriteExtrude: 0
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 100
+  spritePixelsToUnits: 16
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
-  spriteGenerateFallbackPhysicsShape: 1
+  spriteGenerateFallbackPhysicsShape: 0
   alphaUsage: 1
   alphaIsTransparency: 1
   spriteTessellationDetail: -1
@@ -103,19 +103,19 @@ TextureImporter:
       name: Pellet_0
       rect:
         serializedVersion: 2
-        x: 0
+        x: 1
         y: 0
-        width: 16
+        width: 13
         height: 16
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
-      tessellationDetail: 0
+      tessellationDetail: -1
       bones: []
-      spriteID: 5566cfb02b5c9cb469d503a3824c6bb5
-      internalID: -885621131
+      spriteID: ef2a0dd89d6340c80800000000000000
+      internalID: -8357494700477734146
       vertices: []
       indices: 
       edges: []
@@ -123,7 +123,7 @@ TextureImporter:
     outline: []
     physicsShape: []
     bones: []
-    spriteID: 1c81887ee1476e9418002178c7c60b2a
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -131,7 +131,7 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      Pellet_0: -885621131
+      Pellet_0: -8357494700477734146
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
