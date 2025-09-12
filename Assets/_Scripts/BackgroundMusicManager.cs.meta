@@ -5,7 +5,7 @@ MonoImporter:
   serializedVersion: 2
   defaultReferences:
   - introBGM: {fileID: 8300000, guid: aad107a3af697f94a8568bd7aa4e50dc, type: 3}
-  - normalStateBGM: {fileID: 8300000, guid: eceef91c3b5be7347914cde756764178, type: 3}
+  - normalStateBGM: {instanceID: 0}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 
