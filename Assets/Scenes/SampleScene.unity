@@ -39508,6 +39508,60 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6510626110678268959, guid: 64f79c029560c5c40a12246f80d62fc8, type: 3}
   m_PrefabInstance: {fileID: 1892329661}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1894538232
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1894538234}
+  - component: {fileID: 1894538233}
+  m_Layer: 0
+  m_Name: LevelGenerator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1894538233
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1894538232}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 384555cfb54f6b141ac77ad55781939e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  outsideCornerPrefab: {fileID: 7099017301987235102, guid: a6666337680f06446a0f2eb95777a9d8, type: 3}
+  outsideWallPrefab: {fileID: 9095458444926825243, guid: 641dfbe5c00b3be44a98e5d11fd2d87d, type: 3}
+  insideCornerPrefab: {fileID: 2182993504912369099, guid: dd40403f874ab8346ab437609f1587d8, type: 3}
+  insideWallPrefab: {fileID: 5756779626201657235, guid: 8d5b5a82a84e8704d88742003b0de18e, type: 3}
+  pelletPrefab: {fileID: 944410756519930295, guid: 64f79c029560c5c40a12246f80d62fc8, type: 3}
+  powerPelletPrefab: {fileID: 4814580819586236821, guid: 742c4c275c4265b4695dc6b221d0e7b3, type: 3}
+  tJunctionPrefab: {fileID: 1748282757842092526, guid: e9dfc1b2f2cc3dc4e9f69542a248c31b, type: 3}
+  ghostExitPrefab: {fileID: 1666295186587940526, guid: 1ce026b562823d64ca1a71a7ec135358, type: 3}
+  tileSize: 1
+  startPosition: {x: -20, y: 10, z: 0}
+--- !u!4 &1894538234
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1894538232}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -4.4703317, y: -3.0700178, z: -0.10441553}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1896307393
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -44422,3 +44476,4 @@ SceneRoots:
   - {fileID: 1846056597}
   - {fileID: 1129592176}
   - {fileID: 87605086}
+  - {fileID: 1894538234}
