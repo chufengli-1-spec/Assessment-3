@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 public class LevelGenerator : MonoBehaviour
 {
-    // Original level map array
     private int[,] levelMap = 
     {
         {1,2,2,2,2,2,2,2,2,2,2,2,2,7},
@@ -23,7 +22,6 @@ public class LevelGenerator : MonoBehaviour
         {0,0,0,0,0,0,5,0,0,0,4,0,0,0},
     };
 
-    // Prefabs for each tile type
     public GameObject outsideCornerPrefab;
     public GameObject outsideWallPrefab;
     public GameObject insideCornerPrefab;
@@ -33,41 +31,30 @@ public class LevelGenerator : MonoBehaviour
     public GameObject tJunctionPrefab;
     public GameObject ghostExitPrefab;
 
-    // Tile size for positioning
     public float tileSize = 1f;
     
-    // Starting position (top-left corner)
     public Vector3 startPosition = new Vector3(-20f, 10f, 0f);
 
     void Start()
     {
-        // 删除手动摆放的所有关卡元素
         DeleteManualLevel();
         
-        // 创建父对象用于组织生成的关卡
         GameObject levelParent = new GameObject("Generated Level");
         
-        // 只生成左上角（不做镜像）
         GenerateLevel(levelParent);
         
-        // 调整相机
         AdjustCamera();
     }
 
     void DeleteManualLevel()
     {
-        Debug.Log("开始删除手动摆放的关卡元素...");
-        
-        // 直接删除四个已知的角落对象
         DeleteObjectByName("left_corner");
         DeleteObjectByName("right_corner");
         DeleteObjectByName("left bottom_corner");
         DeleteObjectByName("right bottom_corner");
         
-        // 删除所有预制体实例
         DeleteAllPrefabInstances();
         
-        Debug.Log("删除完成");
     }
 
     void DeleteObjectByName(string name)
@@ -76,17 +63,11 @@ public class LevelGenerator : MonoBehaviour
         if (obj != null)
         {
             DestroyImmediate(obj);
-            Debug.Log($"已删除: {name}");
-        }
-        else
-        {
-            Debug.Log($"未找到: {name}");
         }
     }
 
     void DeleteAllPrefabInstances()
     {
-        // 简化版本：直接查找并删除，不记录名称
         GameObject[] allObjects = GameObject.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
         
         string[] prefabNames = {
@@ -110,12 +91,167 @@ public class LevelGenerator : MonoBehaviour
                 }
             }
         }
-        
-        Debug.Log($"删除了 {deletedCount} 个预制体实例");
     }
 
-    // 只生成左上角：startPosition 视为数组坐标 (0,0) 的世界位置（左上）
     void GenerateLevel(GameObject parent)
+    {
+        int rows = levelMap.GetLength(0);
+        int cols = levelMap.GetLength(1);
+
+        GameObject leftTopParent = new GameObject("LeftTop");
+        leftTopParent.transform.parent = parent.transform;
+        GenerateQuadrant(leftTopParent, "LeftTop_");
+
+        CreateRightTopFromLeftTop(leftTopParent, parent);
+
+        CreateLeftBottomFromLeftTop(leftTopParent, parent);
+
+        GameObject rightTopParent = GameObject.Find("RightTop");
+        if (rightTopParent != null)
+        {
+            CreateRightBottomFromRightTop(rightTopParent, parent);
+        }
+
+        RemoveBottomFirstRowAndAdjust(parent);
+}
+
+    void CreateRightTopFromLeftTop(GameObject leftTopParent, GameObject levelParent)
+    {
+        GameObject rightTopParent = new GameObject("RightTop");
+        rightTopParent.transform.parent = levelParent.transform;
+
+        int cols = levelMap.GetLength(1);
+        float leftTopRightEdge = startPosition.x + (cols - 1) * tileSize;
+        float rightTopStartX = leftTopRightEdge + tileSize;
+
+        foreach (Transform child in leftTopParent.transform)
+        {
+            GameObject newObj = Instantiate(child.gameObject, rightTopParent.transform);
+            newObj.name = child.name.Replace("LeftTop_", "RightTop_");
+
+            Vector3 originalPos = child.position;
+            float mirroredX = rightTopStartX + (leftTopRightEdge - originalPos.x);
+            newObj.transform.position = new Vector3(mirroredX, originalPos.y, originalPos.z);
+
+            float originalZRotation = child.eulerAngles.z;
+            newObj.transform.rotation = Quaternion.Euler(0f, 180f, originalZRotation);
+        }
+    }
+
+    void CreateLeftBottomFromLeftTop(GameObject leftTopParent, GameObject levelParent)
+{
+    GameObject leftBottomParent = new GameObject("LeftBottom");
+    leftBottomParent.transform.parent = levelParent.transform;
+    
+    int rows = levelMap.GetLength(0);
+    float topBottomEdge = startPosition.y - (rows - 1) * tileSize;
+    float bottomTopStartY = topBottomEdge - tileSize; 
+    
+    foreach (Transform child in leftTopParent.transform)
+    {
+        GameObject newObj = Instantiate(child.gameObject, leftBottomParent.transform);
+        newObj.name = child.name.Replace("LeftTop_", "LeftBottom_");
+
+        Vector3 originalPos = child.position;
+        float mirroredY = bottomTopStartY + (topBottomEdge - originalPos.y);
+        newObj.transform.position = new Vector3(originalPos.x, mirroredY, originalPos.z);
+        
+        float originalZRotation = child.eulerAngles.z;
+        newObj.transform.rotation = Quaternion.Euler(180f, 0f, originalZRotation);
+    }
+}
+
+    void CreateRightBottomFromRightTop(GameObject rightTopParent, GameObject levelParent)
+    {
+        GameObject rightBottomParent = new GameObject("RightBottom");
+        rightBottomParent.transform.parent = levelParent.transform;
+
+        int rows = levelMap.GetLength(0);
+        float topBottomEdge = startPosition.y - (rows - 1) * tileSize; 
+        float bottomTopStartY = topBottomEdge - tileSize; 
+
+        foreach (Transform child in rightTopParent.transform)
+        {
+            GameObject newObj = Instantiate(child.gameObject, rightBottomParent.transform);
+            newObj.name = child.name.Replace("RightTop_", "RightBottom_");
+
+            Vector3 originalPos = child.position;
+            float mirroredY = bottomTopStartY + (topBottomEdge - originalPos.y);
+            newObj.transform.position = new Vector3(originalPos.x, mirroredY, originalPos.z);
+
+            float originalZRotation = child.eulerAngles.z;
+            newObj.transform.rotation = Quaternion.Euler(180f, 180f, originalZRotation);
+        }
+    }
+
+    void RemoveBottomFirstRowAndAdjust(GameObject levelParent)
+{
+    int rows = levelMap.GetLength(0);
+    float bottomFirstRowY = startPosition.y - (rows - 1) * tileSize; 
+    
+    GameObject leftBottomParent = GameObject.Find("LeftBottom");
+    GameObject rightBottomParent = GameObject.Find("RightBottom");
+    
+    if (leftBottomParent != null)
+    {
+        RemoveRowFromQuadrant(leftBottomParent, bottomFirstRowY);
+        
+        AdjustBottomQuadrantPosition(leftBottomParent, bottomFirstRowY);
+    }
+    
+    if (rightBottomParent != null)
+    {
+        RemoveRowFromQuadrant(rightBottomParent, bottomFirstRowY);
+        
+        AdjustBottomQuadrantPosition(rightBottomParent, bottomFirstRowY);
+    }
+}
+
+void RemoveRowFromQuadrant(GameObject quadrantParent, float rowY)
+{
+    List<GameObject> objectsToRemove = new List<GameObject>();
+    
+    foreach (Transform child in quadrantParent.transform)
+    {
+        if (Mathf.Abs(child.position.y - rowY) < 0.1f)
+        {
+            objectsToRemove.Add(child.gameObject);
+        }
+    }
+    
+    foreach (GameObject obj in objectsToRemove)
+    {
+        DestroyImmediate(obj);
+    }
+}
+
+void AdjustBottomQuadrantPosition(GameObject quadrantParent, float originalFirstRowY)
+{
+    float moveUpDistance = tileSize;
+    
+    foreach (Transform child in quadrantParent.transform)
+    {
+        child.position = new Vector3(
+            child.position.x,
+            child.position.y + moveUpDistance,
+            child.position.z
+        );
+    }
+}
+
+    float CalculateMirroredRotation(float originalRotation)
+    {
+        float normalized = (originalRotation % 360f + 360f) % 360f;
+        
+        if (normalized == 0f) return 180f;
+        if (normalized == 90f) return 270f;
+        if (normalized == 180f) return 0f;
+        if (normalized == 270f) return 90f;
+        
+        return (180f - normalized + 360f) % 360f;
+    }
+
+    void GenerateQuadrant(GameObject parent, string prefix)
     {
         int rows = levelMap.GetLength(0);
         int cols = levelMap.GetLength(1);
@@ -127,7 +263,6 @@ public class LevelGenerator : MonoBehaviour
                 int tileType = levelMap[y, x];
                 if (tileType == 0) continue;
 
-                // 将 startPosition 视为数组 (0,0) 的左上角基准
                 float posX = startPosition.x + x * tileSize;
                 float posY = startPosition.y - y * tileSize;
 
@@ -135,15 +270,10 @@ public class LevelGenerator : MonoBehaviour
                 if (tilePrefab != null)
                 {
                     GameObject tile = Instantiate(tilePrefab, new Vector3(posX, posY, 0f), Quaternion.identity, parent.transform);
-                    tile.name = $"{GetTileTypeName(tileType)}_{x}_{y}";
+                    tile.name = $"{prefix}{GetTileTypeName(tileType)}_{x}_{y}";
 
-                    // 不做镜像：传入 mirrorX=1, mirrorY=1
                     float rotation = CalculateRotation(tileType, x, y, 1, 1);
                     tile.transform.rotation = Quaternion.Euler(0f, 0f, rotation);
-
-                    // 调试输出（可选）
-                    if (tileType == 8)
-                        Debug.Log($"[DEBUG] GhostExit at map ({x},{y}) -> world ({posX},{posY}) rotation {rotation}");
                 }
             }
         }
@@ -181,68 +311,54 @@ public class LevelGenerator : MonoBehaviour
         }
     }
 
-   float CalculateRotation(int tileType, int x, int y, int mirrorX, int mirrorY)
-{
-    float baseRotation = 0f;
-
-    // 基础计算
-    switch (tileType)
+    float CalculateRotation(int tileType, int x, int y, int mirrorX, int mirrorY)
     {
-        case 1: baseRotation = CalculateOutsideCornerRotation(x, y); break;
-        case 2: baseRotation = CalculateOutsideWallRotation(x, y); break;
-        case 3: baseRotation = CalculateInsideCornerRotation(x, y); break;
-        case 4: baseRotation = CalculateInsideWallRotation(x, y); break;
-        case 7: baseRotation = CalculateTJunctionRotation(x, y); break;
-        case 8: baseRotation = CalculateGhostExitRotation(x, y); break;
-        default: return 0f;
-    }
+        float baseRotation = 0f;
 
-    // 镜像修正
-    if (mirrorX == -1) baseRotation = -baseRotation;
-    if (mirrorY == -1) baseRotation = 180f - baseRotation;
+        switch (tileType)
+        {
+            case 1: baseRotation = CalculateOutsideCornerRotation(x, y); break;
+            case 2: baseRotation = CalculateOutsideWallRotation(x, y); break;
+            case 3: baseRotation = CalculateInsideCornerRotation(x, y); break;
+            case 4: baseRotation = CalculateInsideWallRotation(x, y); break;
+            case 7: baseRotation = CalculateTJunctionRotation(x, y); break;
+            case 8: baseRotation = CalculateGhostExitRotation(x, y); break;
+            default: return 0f;
+        }
 
-    // 全局取反修正
-    baseRotation = -baseRotation;
+        if (mirrorX == -1) baseRotation = -baseRotation;
+        if (mirrorY == -1) baseRotation = 180f - baseRotation;
 
-    // ---- 特例 ----
-    // -20,-3 对应数组索引 x=0, y=13
-    if (tileType == 2 && x == 0 && y == 13)
-        baseRotation = -180f;
-    // 其他特例保持原来逻辑
-    else
-    {
-        float worldX = startPosition.x + x * tileSize;
-        float worldY = startPosition.y - y * tileSize;
+        baseRotation = -baseRotation;
 
-        if (worldX == -15f && worldY == 1f)
-            baseRotation = -90f;
-        else if (worldX == -12f && worldY == 1f)
-            baseRotation = 90f;
-        else if (worldX == -7f && worldY == 6f)
-            baseRotation = 90f;
-        else if (worldX == -7f && worldY == 0f)
-            baseRotation = 90f;
-        else if (tileType == 2 && worldY == -3f && worldX >= -20f && worldX <= -16f)
+        if (tileType == 2 && x == 0 && y == 13)
             baseRotation = -180f;
-        else if (tileType == 4 && worldX == -12f && worldY == -1f)
-            baseRotation = 90f;
-        else if (tileType == 4 && worldX >= -13f && worldX <= -12f && worldY <= 3f && worldY >= -2f)
-            baseRotation = 90f;
-        else if (tileType == 2 && worldX == -20f)
-            baseRotation = 90f;
+        else
+        {
+            float worldX = startPosition.x + x * tileSize;
+            float worldY = startPosition.y - y * tileSize;
+
+            if (worldX == -15f && worldY == 1f)
+                baseRotation = -90f;
+            else if (worldX == -12f && worldY == 1f)
+                baseRotation = 90f;
+            else if (worldX == -7f && worldY == 6f)
+                baseRotation = 90f;
+            else if (worldX == -7f && worldY == 0f)
+                baseRotation = 90f;
+            else if (tileType == 2 && worldY == -3f && worldX >= -20f && worldX <= -16f)
+                baseRotation = -180f;
+            else if (tileType == 4 && worldX == -12f && worldY == -1f)
+                baseRotation = 90f;
+            else if (tileType == 4 && worldX >= -13f && worldX <= -12f && worldY <= 3f && worldY >= -2f)
+                baseRotation = 90f;
+            else if (tileType == 2 && worldX == -20f)
+                baseRotation = 90f;
+        }
+
+        baseRotation = (baseRotation % 360f + 360f) % 360f;
+        return baseRotation;
     }
-
-    // 归一化
-    baseRotation = (baseRotation % 360f + 360f) % 360f;
-    return baseRotation;
-}
-
-
-
-
-
-
-
 
     float CalculateOutsideCornerRotation(int x, int y)
     {
@@ -319,29 +435,14 @@ public class LevelGenerator : MonoBehaviour
     }
 
     void AdjustCamera()
-    {
-        Camera mainCamera = Camera.main;
-        if (mainCamera == null) return;
-        
-        int rows = levelMap.GetLength(0);
-        int cols = levelMap.GetLength(1);
-
-        // 地图左上角是 startPosition，右下角:
-        Vector3 topLeft = startPosition;
-        Vector3 bottomRight = new Vector3(startPosition.x + (cols - 1) * tileSize, startPosition.y - (rows - 1) * tileSize, startPosition.z);
-
-        float levelWidth = Mathf.Abs(bottomRight.x - topLeft.x) + tileSize;
-        float levelHeight = Mathf.Abs(topLeft.y - bottomRight.y) + tileSize;
-
-        Vector3 center = (topLeft + bottomRight) / 2f;
-        mainCamera.transform.position = new Vector3(center.x, center.y, mainCamera.transform.position.z);
-
-        float screenRatio = (float)Screen.width / Screen.height;
-        float levelRatio = levelWidth / levelHeight;
-
-        if (levelRatio > screenRatio)
-            mainCamera.orthographicSize = levelWidth / (2f * screenRatio);
-        else
-            mainCamera.orthographicSize = levelHeight / 2f;
-    }
+{
+    Camera mainCamera = Camera.main;
+    if (mainCamera == null) return;
+    
+    mainCamera.transform.position = new Vector3(-10f, -5f, -10f);
+    
+    mainCamera.orthographic = true;
+    
+    mainCamera.orthographicSize = 16f;
+ }
 }
