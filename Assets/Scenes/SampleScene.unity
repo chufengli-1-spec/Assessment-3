@@ -4230,7 +4230,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   introBGM: {fileID: 8300000, guid: aad107a3af697f94a8568bd7aa4e50dc, type: 3}
-  normalStateBGM: {fileID: 0}
+  normalStateBGM: {fileID: 8300000, guid: eceef91c3b5be7347914cde756764178, type: 3}
   introPlayTime: 3
 --- !u!82 &201644481
 AudioSource:
