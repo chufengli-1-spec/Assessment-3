@@ -53,7 +53,7 @@ public class LevelGenerator : MonoBehaviour
         DeleteObjectByName("left bottom_corner");
         DeleteObjectByName("right bottom_corner");
         
-        DeleteAllPrefabInstances();
+    DeleteAllPrefabInstances();
         
     }
 
@@ -104,7 +104,7 @@ public class LevelGenerator : MonoBehaviour
 
         CreateRightTopFromLeftTop(leftTopParent, parent);
 
-        CreateLeftBottomFromLeftTop(leftTopParent, parent);
+    CreateLeftBottomFromLeftTop(leftTopParent, parent);
 
         GameObject rightTopParent = GameObject.Find("RightTop");
         if (rightTopParent != null)
@@ -112,7 +112,7 @@ public class LevelGenerator : MonoBehaviour
             CreateRightBottomFromRightTop(rightTopParent, parent);
         }
 
-        RemoveBottomFirstRowAndAdjust(parent);
+    RemoveBottomFirstRowAndAdjust(parent);
 }
 
     void CreateRightTopFromLeftTop(GameObject leftTopParent, GameObject levelParent)
