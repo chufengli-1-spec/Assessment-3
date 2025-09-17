@@ -53,8 +53,7 @@ public class LevelGenerator : MonoBehaviour
         DeleteObjectByName("left bottom_corner");
         DeleteObjectByName("right bottom_corner");
         
-    DeleteAllPrefabInstances();
-        
+        DeleteAllPrefabInstances();
     }
 
     void DeleteObjectByName(string name)
@@ -68,27 +67,44 @@ public class LevelGenerator : MonoBehaviour
 
     void DeleteAllPrefabInstances()
     {
-        GameObject[] allObjects = GameObject.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+        GameObject[] allObjects = GameObject.FindObjectsOfType<GameObject>();
         
-        string[] prefabNames = {
-            "outsideCornerPrefab", "outsideWallPrefab", "insideCornerPrefab",
-            "insideWallPrefab", "pelletPrefab", "powerPelletPrefab",
-            "tJunctionPrefab", "ghostExitPrefab"
+        string[] namesToDelete = {
+            "LeftTop", "RightTop", "LeftBottom", "RightBottom",
+            "OutsideCorner", "OutsideWall", "InsideCorner",
+            "InsideWall", "Pellet", "PowerPellet",
+            "TJunction", "GhostExit"
         };
-
-        int deletedCount = 0;
+        
         foreach (GameObject obj in allObjects)
         {
             if (obj == null) continue;
             
-            foreach (string prefabName in prefabNames)
+            foreach (string name in namesToDelete)
             {
-                if (obj.name.Contains(prefabName))
+                if (obj.name.Contains(name))
                 {
                     DestroyImmediate(obj);
-                    deletedCount++;
                     break;
                 }
+            }
+        }
+
+        GameObject[] prefabInstances = GameObject.FindObjectsOfType<GameObject>();
+        foreach (GameObject obj in prefabInstances)
+        {
+            if (obj == null) continue;
+            
+            if (obj.name.EndsWith("(Clone)") || 
+                obj.name.Contains("Prefab") ||
+                obj.name.Contains("pellet") || 
+                obj.name.Contains("Pellet") ||
+                obj.name.Contains("corner") || 
+                obj.name.Contains("wall") ||
+                obj.name.Contains("junction") || 
+                obj.name.Contains("exit"))
+            {
+                DestroyImmediate(obj);
             }
         }
     }
@@ -103,8 +119,7 @@ public class LevelGenerator : MonoBehaviour
         GenerateQuadrant(leftTopParent, "LeftTop_");
 
         CreateRightTopFromLeftTop(leftTopParent, parent);
-
-    CreateLeftBottomFromLeftTop(leftTopParent, parent);
+        CreateLeftBottomFromLeftTop(leftTopParent, parent);
 
         GameObject rightTopParent = GameObject.Find("RightTop");
         if (rightTopParent != null)
@@ -113,7 +128,7 @@ public class LevelGenerator : MonoBehaviour
         }
 
     RemoveBottomFirstRowAndAdjust(parent);
-}
+    }
 
     void CreateRightTopFromLeftTop(GameObject leftTopParent, GameObject levelParent)
     {
@@ -139,27 +154,27 @@ public class LevelGenerator : MonoBehaviour
     }
 
     void CreateLeftBottomFromLeftTop(GameObject leftTopParent, GameObject levelParent)
-{
-    GameObject leftBottomParent = new GameObject("LeftBottom");
-    leftBottomParent.transform.parent = levelParent.transform;
-    
-    int rows = levelMap.GetLength(0);
-    float topBottomEdge = startPosition.y - (rows - 1) * tileSize;
-    float bottomTopStartY = topBottomEdge - tileSize; 
-    
-    foreach (Transform child in leftTopParent.transform)
     {
-        GameObject newObj = Instantiate(child.gameObject, leftBottomParent.transform);
-        newObj.name = child.name.Replace("LeftTop_", "LeftBottom_");
-
-        Vector3 originalPos = child.position;
-        float mirroredY = bottomTopStartY + (topBottomEdge - originalPos.y);
-        newObj.transform.position = new Vector3(originalPos.x, mirroredY, originalPos.z);
+        GameObject leftBottomParent = new GameObject("LeftBottom");
+        leftBottomParent.transform.parent = levelParent.transform;
         
-        float originalZRotation = child.eulerAngles.z;
-        newObj.transform.rotation = Quaternion.Euler(180f, 0f, originalZRotation);
+        int rows = levelMap.GetLength(0);
+        float topBottomEdge = startPosition.y - (rows - 1) * tileSize;
+        float bottomTopStartY = topBottomEdge - tileSize; 
+        
+        foreach (Transform child in leftTopParent.transform)
+        {
+            GameObject newObj = Instantiate(child.gameObject, leftBottomParent.transform);
+            newObj.name = child.name.Replace("LeftTop_", "LeftBottom_");
+
+            Vector3 originalPos = child.position;
+            float mirroredY = bottomTopStartY + (topBottomEdge - originalPos.y);
+            newObj.transform.position = new Vector3(originalPos.x, mirroredY, originalPos.z);
+            
+            float originalZRotation = child.eulerAngles.z;
+            newObj.transform.rotation = Quaternion.Euler(180f, 0f, originalZRotation);
+        }
     }
-}
 
     void CreateRightBottomFromRightTop(GameObject rightTopParent, GameObject levelParent)
     {
@@ -185,59 +200,109 @@ public class LevelGenerator : MonoBehaviour
     }
 
     void RemoveBottomFirstRowAndAdjust(GameObject levelParent)
-{
-    int rows = levelMap.GetLength(0);
-    float bottomFirstRowY = startPosition.y - (rows - 1) * tileSize; 
-    
-    GameObject leftBottomParent = GameObject.Find("LeftBottom");
-    GameObject rightBottomParent = GameObject.Find("RightBottom");
-    
-    if (leftBottomParent != null)
     {
-        RemoveRowFromQuadrant(leftBottomParent, bottomFirstRowY);
+        int rows = levelMap.GetLength(0);
+        float bottomFirstRowY = startPosition.y - (rows - 1) * tileSize; 
         
-        AdjustBottomQuadrantPosition(leftBottomParent, bottomFirstRowY);
-    }
-    
-    if (rightBottomParent != null)
-    {
-        RemoveRowFromQuadrant(rightBottomParent, bottomFirstRowY);
+      GameObject leftBottomParent = GameObject.Find("LeftBottom");
+      GameObject rightBottomParent = GameObject.Find("RightBottom");
         
-        AdjustBottomQuadrantPosition(rightBottomParent, bottomFirstRowY);
-    }
-}
-
-void RemoveRowFromQuadrant(GameObject quadrantParent, float rowY)
-{
-    List<GameObject> objectsToRemove = new List<GameObject>();
-    
-    foreach (Transform child in quadrantParent.transform)
-    {
-        if (Mathf.Abs(child.position.y - rowY) < 0.1f)
+        if (leftBottomParent != null)
         {
-            objectsToRemove.Add(child.gameObject);
+            RemoveBottomRowObjects(leftBottomParent, bottomFirstRowY);
+        }
+        
+        if (rightBottomParent != null)
+        {
+            RemoveBottomRowObjects(rightBottomParent, bottomFirstRowY);
+        }
+        
+        if (leftBottomParent != null)
+        {
+            MoveQuadrantUp(leftBottomParent, tileSize);
+        }
+        
+        if (rightBottomParent != null)
+        {
+            MoveQuadrantUp(rightBottomParent, tileSize);
+        }
+        
+     RemoveOverlappingPellets();
+    }
+
+    void MoveQuadrantUp(GameObject quadrantParent, float distance)
+    {
+        foreach (Transform child in quadrantParent.transform)
+        {
+            child.position = new Vector3(
+                child.position.x,
+                child.position.y + distance,
+                child.position.z
+            );
         }
     }
-    
-    foreach (GameObject obj in objectsToRemove)
-    {
-        DestroyImmediate(obj);
-    }
-}
 
-void AdjustBottomQuadrantPosition(GameObject quadrantParent, float originalFirstRowY)
-{
-    float moveUpDistance = tileSize;
-    
-    foreach (Transform child in quadrantParent.transform)
+    void RemoveBottomRowObjects(GameObject quadrantParent, float targetY)
     {
-        child.position = new Vector3(
-            child.position.x,
-            child.position.y + moveUpDistance,
-            child.position.z
-        );
+        List<GameObject> objectsToRemove = new List<GameObject>();
+        float tolerance = 0.01f;
+        
+        foreach (Transform child in quadrantParent.transform)
+        {
+            if (Mathf.Abs(child.position.y - targetY) < tolerance)
+            {
+                objectsToRemove.Add(child.gameObject);
+            }
+        }
+        
+        foreach (GameObject obj in objectsToRemove)
+        {
+            DestroyImmediate(obj);
+        }
     }
-}
+
+    void RemoveOverlappingPellets()
+    {
+        GameObject[] allObjects = GameObject.FindObjectsOfType<GameObject>();
+        List<GameObject> pellets = new List<GameObject>();
+        
+        foreach (GameObject obj in allObjects)
+        {
+            if (obj != null && obj.name.Contains("Pellet"))
+            {
+                pellets.Add(obj);
+            }
+        }
+        
+        for (int i = pellets.Count - 1; i >= 0; i--)
+        {
+            if (pellets[i] == null) continue;
+            
+            Vector3 pos1 = pellets[i].transform.position;
+            
+            for (int j = i - 1; j >= 0; j--)
+            {
+                if (pellets[j] == null) continue;
+                
+                Vector3 pos2 = pellets[j].transform.position;
+                
+                if (Vector3.Distance(pos1, pos2) < 0.1f)
+                {
+                    if (pellets[j].name.Contains("LeftBottom") || pellets[j].name.Contains("RightBottom"))
+                    {
+                        DestroyImmediate(pellets[j]);
+                        pellets.RemoveAt(j);
+                    }
+                    else if (pellets[i].name.Contains("LeftBottom") || pellets[i].name.Contains("RightBottom"))
+                    {
+                        DestroyImmediate(pellets[i]);
+                        pellets.RemoveAt(i);
+                        break;
+                    }
+                }
+            }
+        }
+    }
 
     float CalculateMirroredRotation(float originalRotation)
     {
@@ -335,7 +400,7 @@ void AdjustBottomQuadrantPosition(GameObject quadrantParent, float originalFirst
             baseRotation = -180f;
         else
         {
-            float worldX = startPosition.x + x * tileSize;
+         float worldX = startPosition.x + x * tileSize;
             float worldY = startPosition.y - y * tileSize;
 
             if (worldX == -15f && worldY == 1f)
@@ -352,12 +417,12 @@ void AdjustBottomQuadrantPosition(GameObject quadrantParent, float originalFirst
                 baseRotation = 90f;
             else if (tileType == 4 && worldX >= -13f && worldX <= -12f && worldY <= 3f && worldY >= -2f)
                 baseRotation = 90f;
-            else if (tileType == 2 && worldX == -20f)
+         else if (tileType == 2 && worldX == -20f)
                 baseRotation = 90f;
         }
 
-        baseRotation = (baseRotation % 360f + 360f) % 360f;
-        return baseRotation;
+      baseRotation = (baseRotation % 360f + 360f) % 360f;
+      return baseRotation;
     }
 
     float CalculateOutsideCornerRotation(int x, int y)
@@ -435,14 +500,14 @@ void AdjustBottomQuadrantPosition(GameObject quadrantParent, float originalFirst
     }
 
     void AdjustCamera()
-{
-    Camera mainCamera = Camera.main;
-    if (mainCamera == null) return;
-    
-    mainCamera.transform.position = new Vector3(-10f, -5f, -10f);
-    
-    mainCamera.orthographic = true;
-    
-    mainCamera.orthographicSize = 16f;
- }
+    {
+        Camera mainCamera = Camera.main;
+        if (mainCamera == null) return;
+        
+        mainCamera.transform.position = new Vector3(-10f, -5f, -10f);
+        
+     mainCamera.orthographic = true;
+        
+        mainCamera.orthographicSize = 16f;
+    }
 }
