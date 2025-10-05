@@ -443,6 +443,6 @@ void AdjustBottomQuadrantPosition(GameObject quadrantParent, float originalFirst
     
     mainCamera.orthographic = true;
     
-    mainCamera.orthographicSize = 16f;
+    mainCamera.orthographicSize = 20f;
  }
 }
