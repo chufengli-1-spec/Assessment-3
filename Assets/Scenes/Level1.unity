@@ -7831,7 +7831,7 @@ GameObject:
   - component: {fileID: 350369871}
   m_Layer: 0
   m_Name: tJunctionPrefab
-  m_TagString: Untagged
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -8727,6 +8727,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1049841362511097647, guid: 06474b2c53df7654fb703c786fadf828, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1377041094}
+    - targetCorrespondingSourceObject: {fileID: 1049841362511097647, guid: 06474b2c53df7654fb703c786fadf828, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1377041095}
   m_SourcePrefab: {fileID: 100100000, guid: 06474b2c53df7654fb703c786fadf828, type: 3}
 --- !u!1001 &390916214
 PrefabInstance:
@@ -10036,7 +10039,7 @@ GameObject:
   - component: {fileID: 448806448}
   m_Layer: 0
   m_Name: ghostExitPrefab
-  m_TagString: Untagged
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -12020,7 +12023,7 @@ GameObject:
   - component: {fileID: 554673429}
   m_Layer: 0
   m_Name: insideCornerPrefab
-  m_TagString: Untagged
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -12308,7 +12311,7 @@ GameObject:
   - component: {fileID: 573062835}
   m_Layer: 0
   m_Name: outsideCornerPrefab
-  m_TagString: Untagged
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -19667,7 +19670,7 @@ GameObject:
   - component: {fileID: 875631453}
   m_Layer: 0
   m_Name: powerPelletPrefab
-  m_TagString: Untagged
+  m_TagString: Pellet
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -21610,7 +21613,7 @@ GameObject:
   - component: {fileID: 973919212}
   m_Layer: 0
   m_Name: pelletPrefab
-  m_TagString: Untagged
+  m_TagString: Pellet
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -21759,7 +21762,7 @@ GameObject:
   - component: {fileID: 982667112}
   m_Layer: 0
   m_Name: outsideWallPrefab (-)
-  m_TagString: Untagged
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -25078,7 +25081,7 @@ GameObject:
   - component: {fileID: 1156599684}
   m_Layer: 0
   m_Name: outsideWallPrefab (1)
-  m_TagString: Untagged
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -29706,6 +29709,19 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &1377041095
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1377041090}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f239be545d3733498bb7d4c5c571fd3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveSpeed: 3
 --- !u!1001 &1377492162
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -35795,7 +35811,7 @@ GameObject:
   - component: {fileID: 1684121974}
   m_Layer: 0
   m_Name: insideWallPrefab(-)
-  m_TagString: Untagged
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -36490,7 +36506,7 @@ GameObject:
   - component: {fileID: 1706546052}
   m_Layer: 0
   m_Name: insideWallPrefab (1)
-  m_TagString: Untagged
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
