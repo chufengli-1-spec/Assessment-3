@@ -8,7 +8,7 @@ public class PacStudentController : MonoBehaviour
     [Header("Audio Settings")]
     public AudioClip movementAudio;      
     public AudioClip pelletEatingAudio;  
-    public float audioInterval = 0.3f;   // 添加这个：音频播放间隔
+    public float audioInterval = 1.0f;   // 音频播放间隔（秒）
     
     private KeyCode lastInput;
     private KeyCode currentInput;
@@ -39,9 +39,8 @@ public class PacStudentController : MonoBehaviour
     private bool wasMoving = false;
     private bool isPlayingPelletAudio = false;
     
-    // 添加音频控制变量
+    // 音频控制变量
     private float audioTimer = 0f;
-    private bool shouldPlayAudio = false;
 
     void Start()
     {
@@ -68,14 +67,12 @@ public class PacStudentController : MonoBehaviour
         
         lastInput = KeyCode.D;
         currentInput = KeyCode.D;
-        
 
-        audioSource.loop = true;
+        // 关键修改：取消循环播放，让代码控制播放频率
+        audioSource.loop = false;
         audioSource.spatialBlend = 0f; 
         
         UpdateAnimationDirection();
-        
-        //Debug.Log($"PacStudent initialized at world position: {transform.position}, grid position: {currentGridPos}");
     }
 
     void Update()
@@ -237,7 +234,6 @@ public class PacStudentController : MonoBehaviour
     {
         if (animator == null) return;
         
-        
         if (direction == Vector2Int.down) 
         {
             animator.Play(WALK_DOWN_STATE);
@@ -260,55 +256,45 @@ public class PacStudentController : MonoBehaviour
     {
         if (audioSource == null) return;
         
-        // 检查移动状态变化
         if (isLerping && !wasMoving)
         {
-            // 开始移动：重置计时器并立即播放
-            audioTimer = 0f;
-            shouldPlayAudio = true;
             PlayMovementAudio();
+            audioTimer = 0f;
         }
         else if (!isLerping && wasMoving)
         {
-            // 停止移动：停止音频
             StopMovementAudio();
-            shouldPlayAudio = false;
         }
         
-        // 如果正在移动，控制音频播放频率
         if (isLerping)
         {
             audioTimer += Time.deltaTime;
             
             if (audioTimer >= audioInterval)
             {
-                shouldPlayAudio = true;
+                PlayMovementAudio();
                 audioTimer = 0f;
             }
             
-            if (shouldPlayAudio)
-            {
-                CheckAndUpdateAudioType();
-                PlayMovementAudio();
-                shouldPlayAudio = false;
-            }
+            CheckAndUpdateAudioType();
         }
     }
 
     private void PlayMovementAudio()
     {
-        if (audioSource == null || !shouldPlayAudio) return;
+        if (audioSource == null) return;
         
         AudioClip clipToPlay = GetAppropriateAudioClip();
         
-        if (clipToPlay != null && clipToPlay != audioSource.clip)
+        if (clipToPlay != null)
         {
-            audioSource.clip = clipToPlay;
-        }
-        
-        if (!audioSource.isPlaying)
-        {
+            if (audioSource.clip != clipToPlay)
+            {
+                audioSource.clip = clipToPlay;
+            }
+            
             audioSource.Play();
+            
         }
     }
 
@@ -320,10 +306,9 @@ public class PacStudentController : MonoBehaviour
         }
     }
 
-
     private void CheckAndUpdateAudioType()
     {
-        if (audioSource == null || !audioSource.isPlaying) return;
+        if (audioSource == null) return;
         
         AudioClip appropriateClip = GetAppropriateAudioClip();
         bool shouldPlayPelletAudio = (appropriateClip == pelletEatingAudio);
@@ -332,22 +317,15 @@ public class PacStudentController : MonoBehaviour
         {
             if (shouldPlayPelletAudio && pelletEatingAudio != null)
             {
-
                 audioSource.clip = pelletEatingAudio;
                 isPlayingPelletAudio = true;
             }
             else if (!shouldPlayPelletAudio && movementAudio != null)
             {
-
                 audioSource.clip = movementAudio;
                 isPlayingPelletAudio = false;
             }
-            
-
-            audioSource.Stop();
-            audioSource.Play();
         }
-        
     }
 
     private AudioClip GetAppropriateAudioClip()
