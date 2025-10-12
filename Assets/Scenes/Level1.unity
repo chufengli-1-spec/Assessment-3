@@ -1904,7 +1904,7 @@ AudioSource:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 87605084}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 8300000, guid: 541251927b63c704ab040d9036f1dab9, type: 3}
@@ -1912,7 +1912,7 @@ AudioSource:
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 0
-  Loop: 1
+  Loop: 0
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
@@ -29780,6 +29780,7 @@ MonoBehaviour:
   moveSpeed: 3
   movementAudio: {fileID: 8300000, guid: 541251927b63c704ab040d9036f1dab9, type: 3}
   pelletEatingAudio: {fileID: 8300000, guid: 4219c78a36a214948b9d376142265cb0, type: 3}
+  audioInterval: 1
 --- !u!4 &1377041097 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5661856524613467232, guid: 06474b2c53df7654fb703c786fadf828, type: 3}

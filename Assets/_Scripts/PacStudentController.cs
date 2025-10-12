@@ -8,6 +8,7 @@ public class PacStudentController : MonoBehaviour
     [Header("Audio Settings")]
     public AudioClip movementAudio;      
     public AudioClip pelletEatingAudio;  
+    public float audioInterval = 0.3f;   // 添加这个：音频播放间隔
     
     private KeyCode lastInput;
     private KeyCode currentInput;
@@ -37,6 +38,10 @@ public class PacStudentController : MonoBehaviour
     
     private bool wasMoving = false;
     private bool isPlayingPelletAudio = false;
+    
+    // 添加音频控制变量
+    private float audioTimer = 0f;
+    private bool shouldPlayAudio = false;
 
     void Start()
     {
@@ -255,24 +260,44 @@ public class PacStudentController : MonoBehaviour
     {
         if (audioSource == null) return;
         
+        // 检查移动状态变化
         if (isLerping && !wasMoving)
         {
+            // 开始移动：重置计时器并立即播放
+            audioTimer = 0f;
+            shouldPlayAudio = true;
             PlayMovementAudio();
         }
         else if (!isLerping && wasMoving)
         {
+            // 停止移动：停止音频
             StopMovementAudio();
+            shouldPlayAudio = false;
         }
         
+        // 如果正在移动，控制音频播放频率
         if (isLerping)
         {
-            CheckAndUpdateAudioType();
+            audioTimer += Time.deltaTime;
+            
+            if (audioTimer >= audioInterval)
+            {
+                shouldPlayAudio = true;
+                audioTimer = 0f;
+            }
+            
+            if (shouldPlayAudio)
+            {
+                CheckAndUpdateAudioType();
+                PlayMovementAudio();
+                shouldPlayAudio = false;
+            }
         }
     }
 
     private void PlayMovementAudio()
     {
-        if (audioSource == null) return;
+        if (audioSource == null || !shouldPlayAudio) return;
         
         AudioClip clipToPlay = GetAppropriateAudioClip();
         
