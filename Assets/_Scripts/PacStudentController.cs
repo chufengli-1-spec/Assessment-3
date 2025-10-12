@@ -5,6 +5,10 @@ public class PacStudentController : MonoBehaviour
     [Header("Movement Settings")]
     public float moveSpeed = 3f;
     
+    [Header("Audio Settings")]
+    public AudioClip movementAudio;          // 移动时的音频
+    public AudioClip pelletEatingAudio;      // 吃豆子时的音频
+    
     private KeyCode lastInput;
     private KeyCode currentInput;
     
@@ -17,14 +21,36 @@ public class PacStudentController : MonoBehaviour
     
     private LevelGenerator levelGenerator;
     private Animator animator;
+    private AudioSource audioSource;
 
     private int originalMapWidth;
     private int originalMapHeight;
+    
+    // 动画状态名称
+    private const string WALK_DOWN_STATE = "Sheep_Walk_Down";
+    private const string WALK_RIGHT_STATE = "Sheep_Walk_Right";
+    private const string WALK_LEFT_STATE = "Sheep_Walk_Left";
+    private const string DIE_STATE = "Sheep_Die";
+    
+    // 动画参数名称
+    private const string IS_MOVING = "IsMoving";
+    private const string MOVE_X = "MoveX";
+    private const string MOVE_Y = "MoveY";
+    
+    // 音频状态跟踪
+    private bool wasMoving = false;
+    private bool isPlayingPelletAudio = false;
 
     void Start()
     {
         levelGenerator = FindObjectOfType<LevelGenerator>();
         animator = GetComponent<Animator>();
+        audioSource = GetComponent<AudioSource>();
+        
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
         
         if (levelGenerator == null)
         {
@@ -40,6 +66,10 @@ public class PacStudentController : MonoBehaviour
         
         lastInput = KeyCode.D;
         currentInput = KeyCode.D;
+        
+        // 配置音频源
+        audioSource.loop = true;
+        audioSource.spatialBlend = 0f; // 2D音频
         
         UpdateAnimationDirection();
         
@@ -65,6 +95,9 @@ public class PacStudentController : MonoBehaviour
         {
             ContinueLerping();
         }
+        
+        // 更新动画和音频状态
+        UpdateAnimationAndAudio();
     }
 
     private void HandleInput()
@@ -165,6 +198,214 @@ public class PacStudentController : MonoBehaviour
                 StartLerping(currentInputDirection);
             }
         }
+    }
+
+    /// <summary>
+    /// 更新动画和音频状态
+    /// </summary>
+    private void UpdateAnimationAndAudio()
+    {
+        // 更新动画状态
+        UpdateAnimationState();
+        
+        // 更新音频状态
+        UpdateAudioState();
+        
+        // 记录上一帧的移动状态
+        wasMoving = isLerping;
+    }
+
+    /// <summary>
+    /// 更新动画状态
+    /// </summary>
+    private void UpdateAnimationState()
+    {
+        if (animator == null) return;
+        
+        // 设置移动状态参数 - 这个会触发动画状态转换
+        animator.SetBool(IS_MOVING, isLerping);
+        
+        // 只有在改变方向或者开始移动时才更新方向
+        if (isLerping && !wasMoving)
+        {
+            UpdateAnimationDirection();
+        }
+    }
+
+    /// <summary>
+    /// 更新动画方向
+    /// </summary>
+    private void UpdateAnimationDirection()
+    {
+        if (animator == null) return;
+        
+        Vector2Int direction = GetDirectionFromKeyCode(currentInput);
+        
+        // 设置方向参数
+        animator.SetFloat(MOVE_X, direction.x);
+        animator.SetFloat(MOVE_Y, direction.y);
+        
+        // 根据方向设置对应的动画状态
+        SetAnimationStateByDirection(direction);
+    }
+
+    /// <summary>
+    /// 根据方向设置动画状态
+    /// </summary>
+    private void SetAnimationStateByDirection(Vector2Int direction)
+    {
+        if (animator == null) return;
+        
+        // 注意：在Unity 2D中，Y轴向上为正，但在网格系统中Y轴向下为正
+        // 所以需要根据您的具体动画来调整
+        
+        if (direction == Vector2Int.down) // W - 向上移动
+        {
+            // 对应 Sheep_Walk_Down 状态（根据您的命名，可能需要调整）
+            animator.Play(WALK_DOWN_STATE);
+        }
+        else if (direction == Vector2Int.right) // D - 向右移动
+        {
+            animator.Play(WALK_RIGHT_STATE);
+        }
+        else if (direction == Vector2Int.left) // A - 向左移动
+        {
+            animator.Play(WALK_LEFT_STATE);
+        }
+        else if (direction == Vector2Int.up) // S - 向下移动
+        {
+            // 如果没有专门的向上动画，使用向下动画或默认动画
+            animator.Play(WALK_DOWN_STATE);
+        }
+    }
+
+    /// <summary>
+    /// 更新音频状态
+    /// </summary>
+    private void UpdateAudioState()
+    {
+        if (audioSource == null) return;
+        
+        // 检查移动状态变化
+        if (isLerping && !wasMoving)
+        {
+            // 开始移动：播放音频
+            PlayMovementAudio();
+        }
+        else if (!isLerping && wasMoving)
+        {
+            // 停止移动：停止音频
+            StopMovementAudio();
+        }
+        
+        // 如果正在移动，检查是否需要切换音频类型
+        if (isLerping)
+        {
+            CheckAndUpdateAudioType();
+        }
+    }
+
+    /// <summary>
+    /// 播放移动音频
+    /// </summary>
+    private void PlayMovementAudio()
+    {
+        if (audioSource == null) return;
+        
+        // 确定使用哪种音频
+        AudioClip clipToPlay = GetAppropriateAudioClip();
+        
+        if (clipToPlay != null && clipToPlay != audioSource.clip)
+        {
+            audioSource.clip = clipToPlay;
+        }
+        
+        // 不修改音调和音量，保持原始设置
+        if (!audioSource.isPlaying)
+        {
+            audioSource.Play();
+        }
+    }
+
+    /// <summary>
+    /// 停止移动音频
+    /// </summary>
+    private void StopMovementAudio()
+    {
+        if (audioSource != null && audioSource.isPlaying)
+        {
+            audioSource.Stop();
+        }
+    }
+
+    /// <summary>
+    /// 检查并更新音频类型（普通移动 vs 吃豆子）
+    /// </summary>
+    private void CheckAndUpdateAudioType()
+    {
+        if (audioSource == null || !audioSource.isPlaying) return;
+        
+        AudioClip appropriateClip = GetAppropriateAudioClip();
+        bool shouldPlayPelletAudio = (appropriateClip == pelletEatingAudio);
+        
+        // 如果音频类型需要改变
+        if (shouldPlayPelletAudio != isPlayingPelletAudio)
+        {
+            if (shouldPlayPelletAudio && pelletEatingAudio != null)
+            {
+                // 切换到吃豆子音频
+                audioSource.clip = pelletEatingAudio;
+                isPlayingPelletAudio = true;
+            }
+            else if (!shouldPlayPelletAudio && movementAudio != null)
+            {
+                // 切换到普通移动音频
+                audioSource.clip = movementAudio;
+                isPlayingPelletAudio = false;
+            }
+            
+            // 重新播放新音频
+            audioSource.Stop();
+            audioSource.Play();
+        }
+        
+        // 不修改音调，保持原始音调
+    }
+
+    /// <summary>
+    /// 获取合适的音频片段
+    /// </summary>
+    private AudioClip GetAppropriateAudioClip()
+    {
+        // 检查目标位置是否有豆子
+        if (IsTargetPositionHasPellet())
+        {
+            return pelletEatingAudio;
+        }
+        
+        // 默认使用普通移动音频
+        return movementAudio;
+    }
+
+    /// <summary>
+    /// 检查目标位置是否有豆子
+    /// </summary>
+    private bool IsTargetPositionHasPellet()
+    {
+        if (!isLerping) return false;
+        
+        Vector2Int originalCoords = MapToOriginalQuadrant(targetGridPos);
+        
+        if (originalCoords.x < 0 || originalCoords.x >= originalMapWidth || 
+            originalCoords.y < 0 || originalCoords.y >= originalMapHeight)
+        {
+            return false;
+        }
+        
+        int tileType = levelGenerator.levelMap[originalCoords.y, originalCoords.x];
+        
+        // 检查是否是豆子或能量豆
+        return tileType == 5 || tileType == 6; // 5 = Pellet, 6 = Power Pellet
     }
 
     private bool IsPositionWalkable(Vector2Int gridPosition)
@@ -277,16 +518,6 @@ public class PacStudentController : MonoBehaviour
         return new Vector2Int(gridX, gridY);
     }
 
-    private void UpdateAnimationDirection()
-    {
-        if (animator == null) return;
-        
-        Vector2Int direction = GetDirectionFromKeyCode(currentInput);
-        animator.SetFloat("MoveX", direction.x);
-        animator.SetFloat("MoveY", direction.y);
-        animator.SetFloat("Speed", isLerping ? 1f : 0f);
-    }
-
     void OnDrawGizmosSelected()
     {
         if (!Application.isPlaying || levelGenerator == null) return;
@@ -319,5 +550,19 @@ public class PacStudentController : MonoBehaviour
     public KeyCode GetCurrentDirection()
     {
         return currentInput;
+    }
+
+    /// <summary>
+    /// 播放死亡动画
+    /// </summary>
+    public void PlayDeathAnimation()
+    {
+        if (animator != null)
+        {
+            animator.Play(DIE_STATE);
+        }
+        
+        // 停止移动音频
+        StopMovementAudio();
     }
 }

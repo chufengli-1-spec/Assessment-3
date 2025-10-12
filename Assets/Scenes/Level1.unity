@@ -29722,6 +29722,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveSpeed: 3
+  movementAudio: {fileID: 8300000, guid: 541251927b63c704ab040d9036f1dab9, type: 3}
+  pelletEatingAudio: {fileID: 8300000, guid: 4219c78a36a214948b9d376142265cb0, type: 3}
 --- !u!1001 &1377492162
 PrefabInstance:
   m_ObjectHideFlags: 0
