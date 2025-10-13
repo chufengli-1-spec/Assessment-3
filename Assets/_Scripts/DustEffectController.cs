@@ -37,7 +37,8 @@ public class DustEffectController : MonoBehaviour
     {
         if (dustParticleSystem == null || pacStudent == null) return;
         
-        isMoving = pacStudent.IsMoving();
+        // 修复：使用属性而不是方法调用
+        isMoving = pacStudent.IsMoving; // 移除括号 ()
         Vector3 currentPosition = transform.position;
         
         if (isMoving && !wasMoving)
@@ -76,7 +77,6 @@ public class DustEffectController : MonoBehaviour
         
         emissionModule.rateOverTime = 0f;
     }
-
 
     private void UpdateDustDirection()
     {
