@@ -8686,15 +8686,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5661856524613467232, guid: 06474b2c53df7654fb703c786fadf828, type: 3}
       propertyPath: m_LocalScale.x
-      value: 5
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 5661856524613467232, guid: 06474b2c53df7654fb703c786fadf828, type: 3}
       propertyPath: m_LocalScale.y
-      value: 5
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 5661856524613467232, guid: 06474b2c53df7654fb703c786fadf828, type: 3}
       propertyPath: m_LocalScale.z
-      value: 5
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 5661856524613467232, guid: 06474b2c53df7654fb703c786fadf828, type: 3}
       propertyPath: m_LocalPosition.x
@@ -29892,6 +29892,7 @@ MonoBehaviour:
   wallCollisionParticle: {fileID: 0}
   wallCollisionSound: {fileID: 8300000, guid: 8b23aa0f93c59b04581fa8993722e4bb, type: 3}
   deathParticle: {fileID: 0}
+  wallCollisionCooldown: 0.5
   gameManager: {fileID: 988711110}
 --- !u!4 &1377041097 stripped
 Transform:

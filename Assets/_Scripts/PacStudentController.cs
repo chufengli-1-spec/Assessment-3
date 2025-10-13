@@ -200,50 +200,9 @@ public class PacStudentController : MonoBehaviour
             lastValidPosition = targetPosition;
             isLerping = false;
 
-            // 在移动完成时收集豆子
-            CollectPelletAtPositionIfExists(targetGridPos);
-            
             Vector2Int currentInputDirection = GetDirectionFromKeyCode(currentInput);
             if (IsPositionWalkable(currentGridPos + currentInputDirection))
                 StartLerping(currentInputDirection);
-        }
-    }
-
-    private void CollectPelletAtPositionIfExists(Vector2Int gridPosition)
-    {
-        Vector3 worldPos = GridToWorldPosition(gridPosition);
-        Collider2D[] colliders = Physics2D.OverlapCircleAll(worldPos, 0.1f);
-        
-        foreach (Collider2D collider in colliders)
-        {
-            if (collider != null && (collider.CompareTag("Pellet") || collider.CompareTag("PowerPill")))
-            {
-                Destroy(collider.gameObject);
-                
-                if (collider.CompareTag("Pellet"))
-                {
-                    CollectPellet(10);
-                    // 播放吃豆声音
-                    if (pelletEatingAudio != null && audioSource != null)
-                    {
-                        audioSource.PlayOneShot(pelletEatingAudio);
-                    }
-                }
-                else if (collider.CompareTag("PowerPill"))
-                {
-                    CollectPellet(50);
-                    if (gameManager != null)
-                    {
-                        gameManager.ActivatePowerPillMode();
-                    }
-                    // 播放吃能量丸声音
-                    if (pelletEatingAudio != null && audioSource != null)
-                    {
-                        audioSource.PlayOneShot(pelletEatingAudio);
-                    }
-                }
-                break;
-            }
         }
     }
 
@@ -305,119 +264,107 @@ public class PacStudentController : MonoBehaviour
                 PlayMovementAudio();
                 audioTimer = 0f;
             }
+            CheckAndUpdateAudioType();
         }
     }
 
     private void PlayMovementAudio()
     {
-        if (audioSource == null || movementAudio == null) return;
+        if (audioSource == null) return;
 
-        // 只在没有播放吃豆声音时播放移动声音
-        if (!audioSource.isPlaying || audioSource.clip != pelletEatingAudio)
+        AudioClip clipToPlay = GetAppropriateAudioClip();
+
+        if (clipToPlay != null)
         {
-            audioSource.clip = movementAudio;
+            if (audioSource.clip != clipToPlay)
+                audioSource.clip = clipToPlay;
+
             audioSource.Play();
         }
     }
 
     private void StopMovementAudio()
     {
-        if (audioSource != null && audioSource.isPlaying && audioSource.clip == movementAudio)
+        if (audioSource != null && audioSource.isPlaying)
             audioSource.Stop();
     }
 
-    private Vector2Int MapToOriginalQuadrant(Vector2Int fullPos)
+    private void CheckAndUpdateAudioType()
     {
-        int x = fullPos.x;
-        int y = fullPos.y;
-        
-        int fullWidth = originalMapWidth * 2;
-        int fullHeight = (originalMapHeight * 2) - 2;
-        
-        if (x < 0 || x >= fullWidth || y < 0 || y >= fullHeight)
+        if (audioSource == null) return;
+
+        AudioClip appropriateClip = GetAppropriateAudioClip();
+        bool shouldPlayPelletAudio = (appropriateClip == pelletEatingAudio);
+
+        if (shouldPlayPelletAudio != isPlayingPelletAudio)
         {
-            Debug.Log($"MapToOriginalQuadrant: {fullPos} -> OUT OF BOUNDS (fullSize: {fullWidth}x{fullHeight})");
-            return new Vector2Int(-1, -1);
-        }
-        
-        bool isRightQuadrant = x >= originalMapWidth;
-        bool isBottomQuadrant = y >= originalMapHeight - 1;
-        
-        int originalX, originalY;
-        string quadrantName = "";
-        
-        if (!isRightQuadrant && !isBottomQuadrant)
-        {
-            // 左上象限
-            quadrantName = "TopLeft";
-            originalX = x;
-            originalY = y;
-        }
-        else if (isRightQuadrant && !isBottomQuadrant)
-        {
-            // 右上象限
-            quadrantName = "TopRight";
-            originalX = (originalMapWidth - 1) - (x - originalMapWidth);
-            originalY = y;
-        }
-        else if (!isRightQuadrant && isBottomQuadrant)
-        {
-            // 左下象限
-            quadrantName = "BottomLeft";
-            originalX = x;
-            
-            // 计算在底部象限中的局部坐标（从0开始）
-            int bottomLocalY = y - (originalMapHeight - 1);
-            // 镜像映射：将底部象限的坐标映射回原始地图
-            originalY = (originalMapHeight - 1) - bottomLocalY;
-            
-            // 边界检查
-            if (originalY < 0 || originalY >= originalMapHeight)
+            if (shouldPlayPelletAudio && pelletEatingAudio != null)
             {
-                Debug.Log($"MapToOriginalQuadrant: {fullPos} -> {quadrantName} -> OriginalY {originalY} OUT OF RANGE (0-{originalMapHeight-1})");
-                return new Vector2Int(-1, -1);
+                audioSource.clip = pelletEatingAudio;
+                isPlayingPelletAudio = true;
+            }
+            else if (!shouldPlayPelletAudio && movementAudio != null)
+            {
+                audioSource.clip = movementAudio;
+                isPlayingPelletAudio = false;
             }
         }
-        else
+    }
+
+    private AudioClip GetAppropriateAudioClip()
+    {
+        if (IsTargetPositionHasPellet()) return pelletEatingAudio;
+        return movementAudio;
+    }
+
+    private bool IsTargetPositionHasPellet()
+    {
+        if (!isLerping) return false;
+
+        Vector2Int coords = MapToOriginalQuadrant(targetGridPos);
+        if (coords.x < 0 || coords.x >= originalMapWidth || coords.y < 0 || coords.y >= originalMapHeight)
+            return false;
+
+        int tile = levelGenerator.levelMap[coords.y, coords.x];
+        
+        // 如果是豆子或能量丸，收集它
+        if (tile == 5 || tile == 6)
         {
-            // 右下象限
-            quadrantName = "BottomRight";
-            originalX = (originalMapWidth - 1) - (x - originalMapWidth);
-            
-            // 计算在底部象限中的局部坐标（从0开始）
-            int bottomLocalY = y - (originalMapHeight - 1);
-            // 镜像映射：将底部象限的坐标映射回原始地图
-            originalY = (originalMapHeight - 1) - bottomLocalY;
-            
-            // 边界检查
-            if (originalY < 0 || originalY >= originalMapHeight)
-            {
-                Debug.Log($"MapToOriginalQuadrant: {fullPos} -> {quadrantName} -> OriginalY {originalY} OUT OF RANGE (0-{originalMapHeight-1})");
-                return new Vector2Int(-1, -1);
-            }
+            CollectPelletAtPosition(targetGridPos);
+            return true;
         }
         
-        Vector2Int result = new Vector2Int(originalX, originalY);
+        return false;
+    }
+
+    private void CollectPelletAtPosition(Vector2Int gridPosition)
+    {
+        // 找到该位置的豆子游戏对象并销毁
+        Vector3 worldPos = GridToWorldPosition(gridPosition);
+        Collider2D[] colliders = Physics2D.OverlapCircleAll(worldPos, 0.1f);
         
-        // 详细调试信息（只输出特定区域以减少日志数量）
-        if (y >= 13 && y <= 18) // 只调试底部区域
+        foreach (Collider2D collider in colliders)
         {
-            Vector3 worldPos = GridToWorldPosition(fullPos);
-            string validity = (result.x >= 0 && result.x < originalMapWidth && result.y >= 0 && result.y < originalMapHeight) ? "VALID" : "INVALID";
-            
-            if (validity == "VALID")
+            if (collider != null && (collider.CompareTag("Pellet") || collider.CompareTag("PowerPill")))
             {
-                int tile = levelGenerator.levelMap[result.y, result.x];
-                Debug.Log($"MapToOriginalQuadrant: Full{fullPos} -> World{worldPos} -> {quadrantName} -> Original{result} " +
-                         $"[Tile: {tile}, Walkable: {IsTileWalkable(tile)}] {validity}");
-            }
-            else
-            {
-                Debug.Log($"MapToOriginalQuadrant: Full{fullPos} -> World{worldPos} -> {quadrantName} -> Original{result} {validity}");
+                Destroy(collider.gameObject);
+                
+                // 根据类型加分
+                if (collider.CompareTag("Pellet"))
+                {
+                    CollectPellet(10);
+                }
+                else if (collider.CompareTag("PowerPill"))
+                {
+                    CollectPellet(50);
+                    if (gameManager != null)
+                    {
+                        gameManager.ActivatePowerPillMode();
+                    }
+                }
+                break;
             }
         }
-        
-        return result;
     }
 
     private bool IsPositionWalkable(Vector2Int gridPosition)
@@ -431,6 +378,100 @@ public class PacStudentController : MonoBehaviour
         int tile = levelGenerator.levelMap[coords.y, coords.x];
         return IsTileWalkable(tile);
     }
+
+    private Vector2Int MapToOriginalQuadrant(Vector2Int fullPos)
+{
+    int x = fullPos.x;
+    int y = fullPos.y;
+    
+    int fullWidth = originalMapWidth * 2;
+    int fullHeight = (originalMapHeight * 2) - 2;
+    
+    if (x < 0 || x >= fullWidth || y < 0 || y >= fullHeight)
+    {
+        Debug.Log($"MapToOriginalQuadrant: {fullPos} -> OUT OF BOUNDS (fullSize: {fullWidth}x{fullHeight})");
+        return new Vector2Int(-1, -1);
+    }
+    
+    bool isRightQuadrant = x >= originalMapWidth;
+    bool isBottomQuadrant = y >= originalMapHeight - 1;
+    
+    int originalX, originalY;
+    string quadrantName = "";
+    
+    if (!isRightQuadrant && !isBottomQuadrant)
+    {
+        // 左上象限
+        quadrantName = "TopLeft";
+        originalX = x;
+        originalY = y;
+    }
+    else if (isRightQuadrant && !isBottomQuadrant)
+    {
+        // 右上象限
+        quadrantName = "TopRight";
+        originalX = (originalMapWidth - 1) - (x - originalMapWidth);
+        originalY = y;
+    }
+    else if (!isRightQuadrant && isBottomQuadrant)
+    {
+        // 左下象限
+        quadrantName = "BottomLeft";
+        originalX = x;
+        
+        // 计算在底部象限中的局部坐标（从0开始）
+        int bottomLocalY = y - (originalMapHeight - 1);
+        // 镜像映射：将底部象限的坐标映射回原始地图
+        originalY = (originalMapHeight - 1) - bottomLocalY;
+        
+        // 边界检查
+        if (originalY < 0 || originalY >= originalMapHeight)
+        {
+            Debug.Log($"MapToOriginalQuadrant: {fullPos} -> {quadrantName} -> OriginalY {originalY} OUT OF RANGE (0-{originalMapHeight-1})");
+            return new Vector2Int(-1, -1);
+        }
+    }
+    else
+    {
+        // 右下象限
+        quadrantName = "BottomRight";
+        originalX = (originalMapWidth - 1) - (x - originalMapWidth);
+        
+        // 计算在底部象限中的局部坐标（从0开始）
+        int bottomLocalY = y - (originalMapHeight - 1);
+        // 镜像映射：将底部象限的坐标映射回原始地图
+        originalY = (originalMapHeight - 1) - bottomLocalY;
+        
+        // 边界检查
+        if (originalY < 0 || originalY >= originalMapHeight)
+        {
+            Debug.Log($"MapToOriginalQuadrant: {fullPos} -> {quadrantName} -> OriginalY {originalY} OUT OF RANGE (0-{originalMapHeight-1})");
+            return new Vector2Int(-1, -1);
+        }
+    }
+    
+    Vector2Int result = new Vector2Int(originalX, originalY);
+    
+    // 详细调试信息（只输出特定区域以减少日志数量）
+    if (y >= 13 && y <= 18) // 只调试底部区域
+    {
+        Vector3 worldPos = GridToWorldPosition(fullPos);
+        string validity = (result.x >= 0 && result.x < originalMapWidth && result.y >= 0 && result.y < originalMapHeight) ? "VALID" : "INVALID";
+        
+        if (validity == "VALID")
+        {
+            int tile = levelGenerator.levelMap[result.y, result.x];
+            Debug.Log($"MapToOriginalQuadrant: Full{fullPos} -> World{worldPos} -> {quadrantName} -> Original{result} " +
+                     $"[Tile: {tile}, Walkable: {IsTileWalkable(tile)}] {validity}");
+        }
+        else
+        {
+            Debug.Log($"MapToOriginalQuadrant: Full{fullPos} -> World{worldPos} -> {quadrantName} -> Original{result} {validity}");
+        }
+    }
+    
+    return result;
+}
 
     private bool IsTileWalkable(int tile)
     {
