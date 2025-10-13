@@ -17,6 +17,10 @@ public class PacStudentController : MonoBehaviour
     public GameObject deathParticle;
     public float wallCollisionCooldown = 0.5f; // 墙壁碰撞冷却时间
 
+    [Header("Teleporter Settings")]
+    public AudioClip teleportSound; // 新增：传送音效
+    public GameObject teleportParticle; // 新增：传送粒子效果
+
     [Header("References")]
     public GameManager gameManager;
 
@@ -30,6 +34,7 @@ public class PacStudentController : MonoBehaviour
     private float lerpTime;
     private bool isLerping = false;
     private bool isDead = false;
+    private bool isTeleporting = false; // 新增：防止重复传送
 
     private LevelGenerator levelGenerator;
     private Animator animator;
@@ -41,6 +46,13 @@ public class PacStudentController : MonoBehaviour
     private Vector3 lastValidPosition;
     private bool hasWallCollisionThisFrame = false;
     private float lastWallCollisionTime = 0f; // 上次墙壁碰撞时间
+
+    // 传送门位置常量
+    private readonly Vector3 LEFT_TELEPORTER_POS = new Vector3(-20f, -4f, 0f);
+    private readonly Vector3 RIGHT_TELEPORTER_POS = new Vector3(7f, -4f, 0f);
+    private readonly Vector3 LEFT_TELEPORT_TARGET = new Vector3(-19f, -4f, 0f);
+    private readonly Vector3 RIGHT_TELEPORT_TARGET = new Vector3(6f, -4f, 0f);
+    private const float TELEPORT_DETECTION_RANGE = 0.3f;
 
     private const string WALK_DOWN_STATE = "Sheep_Walk_Down";
     private const string WALK_RIGHT_STATE = "Sheep_Walk_Right";
@@ -100,6 +112,12 @@ public class PacStudentController : MonoBehaviour
 
         HandleInput();
 
+        // 新增：传送检测（在移动逻辑之前）
+        if (!isTeleporting)
+        {
+            CheckForTeleport();
+        }
+
         if (isLerping)
             TryChangeDirectionWhileMoving();
 
@@ -111,6 +129,123 @@ public class PacStudentController : MonoBehaviour
         UpdateAnimationAndAudio();
 
         hasWallCollisionThisFrame = false;
+    }
+
+    // 新增：传送检测方法
+    private void CheckForTeleport()
+    {
+        Vector3 currentPos = transform.position;
+        
+        // 检查左侧传送门
+        if (Vector3.Distance(currentPos, LEFT_TELEPORTER_POS) <= TELEPORT_DETECTION_RANGE)
+        {
+            StartTeleport(false); // 从左侧传送到右侧
+        }
+        // 检查右侧传送门
+        else if (Vector3.Distance(currentPos, RIGHT_TELEPORTER_POS) <= TELEPORT_DETECTION_RANGE)
+        {
+            StartTeleport(true); // 从右侧传送到左侧
+        }
+    }
+
+    // 新增：开始传送过程
+    private void StartTeleport(bool fromRightToLeft)
+    {
+        if (isTeleporting) return;
+        
+        isTeleporting = true;
+        isLerping = false; // 停止当前的移动
+
+        // 播放传送音效
+        if (teleportSound != null && audioSource != null)
+        {
+            audioSource.PlayOneShot(teleportSound);
+        }
+
+        // 生成传送粒子效果
+        if (teleportParticle != null)
+        {
+            Instantiate(teleportParticle, transform.position, Quaternion.identity);
+        }
+
+        // 执行传送
+        if (fromRightToLeft)
+        {
+            TeleportToLeft();
+        }
+        else
+        {
+            TeleportToRight();
+        }
+
+        // 传送完成后恢复状态
+        StartCoroutine(CompleteTeleport());
+    }
+
+    // 新增：传送到左侧
+    private void TeleportToLeft()
+    {
+        Debug.Log("Teleporting from right to left tunnel");
+        
+        transform.position = LEFT_TELEPORT_TARGET;
+        
+        // 更新位置状态
+        currentGridPos = WorldToGridPosition(transform.position);
+        lastValidPosition = transform.position;
+        
+        // 传送后强制向右移动（向内）
+        lastInput = KeyCode.D;
+        currentInput = KeyCode.D;
+        
+        // 立即开始移动
+        Vector2Int direction = GetDirectionFromKeyCode(currentInput);
+        if (IsPositionWalkable(currentGridPos + direction))
+        {
+            StartLerping(direction);
+        }
+        
+        // 传送结束时的粒子效果
+        if (teleportParticle != null)
+        {
+            Instantiate(teleportParticle, transform.position, Quaternion.identity);
+        }
+    }
+
+    // 新增：传送到右侧
+    private void TeleportToRight()
+    {
+        Debug.Log("Teleporting from left to right tunnel");
+        
+        transform.position = RIGHT_TELEPORT_TARGET;
+        
+        // 更新位置状态
+        currentGridPos = WorldToGridPosition(transform.position);
+        lastValidPosition = transform.position;
+        
+        // 传送后强制向左移动（向内）
+        lastInput = KeyCode.A;
+        currentInput = KeyCode.A;
+        
+        // 立即开始移动
+        Vector2Int direction = GetDirectionFromKeyCode(currentInput);
+        if (IsPositionWalkable(currentGridPos + direction))
+        {
+            StartLerping(direction);
+        }
+        
+        // 传送结束时的粒子效果
+        if (teleportParticle != null)
+        {
+            Instantiate(teleportParticle, transform.position, Quaternion.identity);
+        }
+    }
+
+    // 新增：完成传送的协程
+    private System.Collections.IEnumerator CompleteTeleport()
+    {
+        // 短暂延迟以确保传送完成
+        yield return new WaitForSeconds(0.1f);
+        isTeleporting = false;
     }
 
     private void HandleInput()
@@ -380,98 +515,98 @@ public class PacStudentController : MonoBehaviour
     }
 
     private Vector2Int MapToOriginalQuadrant(Vector2Int fullPos)
-{
-    int x = fullPos.x;
-    int y = fullPos.y;
-    
-    int fullWidth = originalMapWidth * 2;
-    int fullHeight = (originalMapHeight * 2) - 2;
-    
-    if (x < 0 || x >= fullWidth || y < 0 || y >= fullHeight)
     {
-        Debug.Log($"MapToOriginalQuadrant: {fullPos} -> OUT OF BOUNDS (fullSize: {fullWidth}x{fullHeight})");
-        return new Vector2Int(-1, -1);
-    }
-    
-    bool isRightQuadrant = x >= originalMapWidth;
-    bool isBottomQuadrant = y >= originalMapHeight - 1;
-    
-    int originalX, originalY;
-    string quadrantName = "";
-    
-    if (!isRightQuadrant && !isBottomQuadrant)
-    {
-        // 左上象限
-        quadrantName = "TopLeft";
-        originalX = x;
-        originalY = y;
-    }
-    else if (isRightQuadrant && !isBottomQuadrant)
-    {
-        // 右上象限
-        quadrantName = "TopRight";
-        originalX = (originalMapWidth - 1) - (x - originalMapWidth);
-        originalY = y;
-    }
-    else if (!isRightQuadrant && isBottomQuadrant)
-    {
-        // 左下象限
-        quadrantName = "BottomLeft";
-        originalX = x;
+        int x = fullPos.x;
+        int y = fullPos.y;
         
-        // 计算在底部象限中的局部坐标（从0开始）
-        int bottomLocalY = y - (originalMapHeight - 1);
-        // 镜像映射：将底部象限的坐标映射回原始地图
-        originalY = (originalMapHeight - 1) - bottomLocalY;
+        int fullWidth = originalMapWidth * 2;
+        int fullHeight = (originalMapHeight * 2) - 2;
         
-        // 边界检查
-        if (originalY < 0 || originalY >= originalMapHeight)
+        if (x < 0 || x >= fullWidth || y < 0 || y >= fullHeight)
         {
-            Debug.Log($"MapToOriginalQuadrant: {fullPos} -> {quadrantName} -> OriginalY {originalY} OUT OF RANGE (0-{originalMapHeight-1})");
+            Debug.Log($"MapToOriginalQuadrant: {fullPos} -> OUT OF BOUNDS (fullSize: {fullWidth}x{fullHeight})");
             return new Vector2Int(-1, -1);
         }
-    }
-    else
-    {
-        // 右下象限
-        quadrantName = "BottomRight";
-        originalX = (originalMapWidth - 1) - (x - originalMapWidth);
         
-        // 计算在底部象限中的局部坐标（从0开始）
-        int bottomLocalY = y - (originalMapHeight - 1);
-        // 镜像映射：将底部象限的坐标映射回原始地图
-        originalY = (originalMapHeight - 1) - bottomLocalY;
+        bool isRightQuadrant = x >= originalMapWidth;
+        bool isBottomQuadrant = y >= originalMapHeight - 1;
         
-        // 边界检查
-        if (originalY < 0 || originalY >= originalMapHeight)
+        int originalX, originalY;
+        string quadrantName = "";
+        
+        if (!isRightQuadrant && !isBottomQuadrant)
         {
-            Debug.Log($"MapToOriginalQuadrant: {fullPos} -> {quadrantName} -> OriginalY {originalY} OUT OF RANGE (0-{originalMapHeight-1})");
-            return new Vector2Int(-1, -1);
+            // 左上象限
+            quadrantName = "TopLeft";
+            originalX = x;
+            originalY = y;
         }
-    }
-    
-    Vector2Int result = new Vector2Int(originalX, originalY);
-    
-    // 详细调试信息（只输出特定区域以减少日志数量）
-    if (y >= 13 && y <= 18) // 只调试底部区域
-    {
-        Vector3 worldPos = GridToWorldPosition(fullPos);
-        string validity = (result.x >= 0 && result.x < originalMapWidth && result.y >= 0 && result.y < originalMapHeight) ? "VALID" : "INVALID";
-        
-        if (validity == "VALID")
+        else if (isRightQuadrant && !isBottomQuadrant)
         {
-            int tile = levelGenerator.levelMap[result.y, result.x];
-            Debug.Log($"MapToOriginalQuadrant: Full{fullPos} -> World{worldPos} -> {quadrantName} -> Original{result} " +
-                     $"[Tile: {tile}, Walkable: {IsTileWalkable(tile)}] {validity}");
+            // 右上象限
+            quadrantName = "TopRight";
+            originalX = (originalMapWidth - 1) - (x - originalMapWidth);
+            originalY = y;
+        }
+        else if (!isRightQuadrant && isBottomQuadrant)
+        {
+            // 左下象限
+            quadrantName = "BottomLeft";
+            originalX = x;
+            
+            // 计算在底部象限中的局部坐标（从0开始）
+            int bottomLocalY = y - (originalMapHeight - 1);
+            // 镜像映射：将底部象限的坐标映射回原始地图
+            originalY = (originalMapHeight - 1) - bottomLocalY;
+            
+            // 边界检查
+            if (originalY < 0 || originalY >= originalMapHeight)
+            {
+                Debug.Log($"MapToOriginalQuadrant: {fullPos} -> {quadrantName} -> OriginalY {originalY} OUT OF RANGE (0-{originalMapHeight-1})");
+                return new Vector2Int(-1, -1);
+            }
         }
         else
         {
-            Debug.Log($"MapToOriginalQuadrant: Full{fullPos} -> World{worldPos} -> {quadrantName} -> Original{result} {validity}");
+            // 右下象限
+            quadrantName = "BottomRight";
+            originalX = (originalMapWidth - 1) - (x - originalMapWidth);
+            
+            // 计算在底部象限中的局部坐标（从0开始）
+            int bottomLocalY = y - (originalMapHeight - 1);
+            // 镜像映射：将底部象限的坐标映射回原始地图
+            originalY = (originalMapHeight - 1) - bottomLocalY;
+            
+            // 边界检查
+            if (originalY < 0 || originalY >= originalMapHeight)
+            {
+                Debug.Log($"MapToOriginalQuadrant: {fullPos} -> {quadrantName} -> OriginalY {originalY} OUT OF RANGE (0-{originalMapHeight-1})");
+                return new Vector2Int(-1, -1);
+            }
         }
+        
+        Vector2Int result = new Vector2Int(originalX, originalY);
+        
+        // 详细调试信息（只输出特定区域以减少日志数量）
+        if (y >= 13 && y <= 18) // 只调试底部区域
+        {
+            Vector3 worldPos = GridToWorldPosition(fullPos);
+            string validity = (result.x >= 0 && result.x < originalMapWidth && result.y >= 0 && result.y < originalMapHeight) ? "VALID" : "INVALID";
+            
+            if (validity == "VALID")
+            {
+                int tile = levelGenerator.levelMap[result.y, result.x];
+                Debug.Log($"MapToOriginalQuadrant: Full{fullPos} -> World{worldPos} -> {quadrantName} -> Original{result} " +
+                         $"[Tile: {tile}, Walkable: {IsTileWalkable(tile)}] {validity}");
+            }
+            else
+            {
+                Debug.Log($"MapToOriginalQuadrant: Full{fullPos} -> World{worldPos} -> {quadrantName} -> Original{result} {validity}");
+            }
+        }
+        
+        return result;
     }
-    
-    return result;
-}
 
     private bool IsTileWalkable(int tile)
     {
