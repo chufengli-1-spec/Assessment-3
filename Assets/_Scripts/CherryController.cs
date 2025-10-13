@@ -3,12 +3,9 @@ using System.Collections;
 
 public class CherryController : MonoBehaviour
 {
-    [Header("Cherry Settings")]
     public float spawnDelay = 5f;
     public float moveSpeed = 2f; 
     public float levelBoundsOffset = 1f; 
-
-    [Header("References")]
     public GameObject cherryPrefab;
     public LevelGenerator levelGenerator;
     public Transform levelCenter;
@@ -36,6 +33,7 @@ public class CherryController : MonoBehaviour
             levelCenter = new GameObject("LevelCenter").transform;
             levelCenter.position = center;
         }
+        
         spawnCoroutine = StartCoroutine(SpawnCherryAfterDelay(spawnDelay));
     }
 
@@ -57,7 +55,6 @@ public class CherryController : MonoBehaviour
     {
         if (cherryPrefab == null || levelGenerator == null)
         {
-            Debug.LogWarning("Cherry prefab or level generator not assigned!");
             return;
         }
 
@@ -66,12 +63,28 @@ public class CherryController : MonoBehaviour
 
         currentCherry = Instantiate(cherryPrefab, startPosition, Quaternion.identity);
         currentCherry.name = "BonusCherry";
+        currentCherry.tag = "Cherry";
         
         SpriteRenderer spriteRenderer = currentCherry.GetComponent<SpriteRenderer>();
         if (spriteRenderer != null)
         {
             spriteRenderer.sortingOrder = 100; 
         }
+
+        Collider2D collider = currentCherry.GetComponent<Collider2D>();
+        if (collider == null)
+        {
+            collider = currentCherry.AddComponent<BoxCollider2D>();
+        }
+        collider.isTrigger = true;
+
+        Rigidbody2D rb = currentCherry.GetComponent<Rigidbody2D>();
+        if (rb == null)
+        {
+            rb = currentCherry.AddComponent<Rigidbody2D>();
+        }
+        rb.isKinematic = true;
+        rb.simulated = true;
 
         CherryCollisionHandler cherryCollision = currentCherry.GetComponent<CherryCollisionHandler>();
         if (cherryCollision == null)
@@ -82,8 +95,6 @@ public class CherryController : MonoBehaviour
 
         isCherryActive = true;
         lerpTime = 0f;
-
-        //Debug.Log($"Cherry spawned at {startPosition}, moving from {spawnSide}");
     }
 
     private SpawnSide GetRandomSpawnSide()
@@ -215,49 +226,23 @@ public class CherryController : MonoBehaviour
 
     public void OnCherryCollected()
     {
-        Debug.Log("Cherry collected! +300 points");
+        isCherryActive = false;
         
-        
-        DestroyCherry();
+        if (currentCherry != null)
+        {
+            Destroy(currentCherry);
+            currentCherry = null;
+        }
+
+        if (spawnCoroutine != null)
+        {
+            StopCoroutine(spawnCoroutine);
+        }
+        spawnCoroutine = StartCoroutine(SpawnCherryAfterDelay(spawnDelay));
     }
 
     public void ForceDestroyCherry()
     {
         DestroyCherry();
-    }
-
-    void OnDrawGizmosSelected()
-    {
-        if (!Application.isPlaying || levelGenerator == null) return;
-
-        Bounds bounds = CalculateLevelBounds();
-        Gizmos.color = Color.green;
-        Gizmos.DrawWireCube(bounds.center, bounds.size);
-
-        if (isCherryActive && currentCherry != null)
-        {
-            Gizmos.color = Color.red;
-            Gizmos.DrawLine(startPosition, endPosition);
-            Gizmos.DrawWireSphere(startPosition, 0.3f);
-            Gizmos.DrawWireSphere(endPosition, 0.3f);
-        }
-    }
-}
-
-public class CherryCollisionHandler : MonoBehaviour
-{
-    private CherryController cherryController;
-
-    public void Initialize(CherryController controller)
-    {
-        cherryController = controller;
-    }
-
-    void OnTriggerEnter2D(Collider2D other)
-    {
-        if (other.CompareTag("Player")) 
-        {
-            cherryController.OnCherryCollected();
-        }
     }
 }

@@ -8684,6 +8684,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 9
       objectReference: {fileID: 0}
+    - target: {fileID: 1049841362511097647, guid: 06474b2c53df7654fb703c786fadf828, type: 3}
+      propertyPath: m_TagString
+      value: Player
+      objectReference: {fileID: 0}
     - target: {fileID: 5661856524613467232, guid: 06474b2c53df7654fb703c786fadf828, type: 3}
       propertyPath: m_LocalScale.x
       value: 10
@@ -8761,9 +8765,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1049841362511097647, guid: 06474b2c53df7654fb703c786fadf828, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1377041101}
-    - targetCorrespondingSourceObject: {fileID: 1049841362511097647, guid: 06474b2c53df7654fb703c786fadf828, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1377041100}
     - targetCorrespondingSourceObject: {fileID: 1049841362511097647, guid: 06474b2c53df7654fb703c786fadf828, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1377041103}
@@ -22145,9 +22146,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 138ff8da2962ecc42bc489eb0c1185cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  scoreText: {fileID: 0}
-  livesText: {fileID: 0}
-  ghostTimerText: {fileID: 0}
+  scoreText: {fileID: 887462005}
+  livesContainer: {fileID: 1970231223}
+  gameTimerText: {fileID: 351194810}
+  ghostScaredTimerText: {fileID: 463164328}
   ghostTimerPanel: {fileID: 0}
   normalMusic: {fileID: 0}
   scaredMusic: {fileID: 0}
@@ -29893,6 +29895,8 @@ MonoBehaviour:
   wallCollisionSound: {fileID: 8300000, guid: 8b23aa0f93c59b04581fa8993722e4bb, type: 3}
   deathParticle: {fileID: 0}
   wallCollisionCooldown: 0.5
+  teleportSound: {fileID: 0}
+  teleportParticle: {fileID: 0}
   gameManager: {fileID: 988711110}
 --- !u!4 &1377041097 stripped
 Transform:
@@ -29914,42 +29918,6 @@ MonoBehaviour:
   dustParticleSystem: {fileID: 1390517546}
   emissionRate: 10
   dustOffset: -0.2
---- !u!58 &1377041100
-CircleCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1377041090}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ForceSendLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ForceReceiveLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ContactCaptureLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_CallbackLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_IsTrigger: 1
-  m_UsedByEffector: 0
-  m_CompositeOperation: 0
-  m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
-  m_Radius: 0.05
 --- !u!58 &1377041101
 CircleCollider2D:
   m_ObjectHideFlags: 0
