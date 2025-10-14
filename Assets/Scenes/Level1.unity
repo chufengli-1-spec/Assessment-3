@@ -17567,7 +17567,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 20a59e49c87ad734ea08208e9cb65004, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  spawnDelay: 3
+  spawnDelay: 5
   moveSpeed: 0.3
   levelBoundsOffset: 1
   cherryPrefab: {fileID: 6551406782801200246, guid: 41fb789475e9e3b4f8f3e86ab90668fd, type: 3}
