@@ -6,10 +6,10 @@ public class GameManager : MonoBehaviour
 {
     [Header("UI Elements")]
     public Text scoreText;
-    public GameObject livesContainer;  // 改为引用容器对象
+    public GameObject livesContainer;
     public Text gameTimerText;
-    public Text ghostScaredTimerText;  // 改为使用这个显示恐惧时间
-    public GameObject ghostTimerPanel; // 如果需要的话保留面板
+    public Text ghostScaredTimerText;
+    public GameObject ghostTimerPanel;
     
     [Header("Audio")]
     public AudioClip normalMusic;
@@ -18,12 +18,14 @@ public class GameManager : MonoBehaviour
     
     [Header("Game Settings")]
     public int startingLives = 3;
+    public float deathSequenceDuration = 3f;
     
     private int score = 0;
     private int lives;
     private AudioSource audioSource;
     private float powerPillTimer = 0f;
     private bool isPowerPillActive = false;
+    private bool isDeathSequenceActive = false;
     
     // 游戏计时相关
     private float gameTime = 0f;
@@ -31,6 +33,7 @@ public class GameManager : MonoBehaviour
     
     public bool IsPowerPillActive { get { return isPowerPillActive; } }
     public float PowerPillTimeRemaining { get { return powerPillTimer; } }
+    public bool IsDeathSequenceActive { get { return isDeathSequenceActive; } }
     
     private void Start()
     {
@@ -46,10 +49,8 @@ public class GameManager : MonoBehaviour
         if (ghostTimerPanel != null)
             ghostTimerPanel.SetActive(false);
         
-        // 初始化生命显示
         UpdateLivesDisplay();
         
-        // 播放初始音乐
         if (normalMusic != null)
         {
             audioSource.clip = normalMusic;
@@ -60,9 +61,8 @@ public class GameManager : MonoBehaviour
     
     private void Update()
     {
-        if (isGameRunning)
+        if (isGameRunning && !isDeathSequenceActive)
         {
-            // 更新游戏时间
             gameTime += Time.deltaTime;
             UpdateGameTimerUI();
         }
@@ -81,10 +81,11 @@ public class GameManager : MonoBehaviour
     
     public void ActivatePowerPillMode()
     {
+        if (isDeathSequenceActive) return;
+        
         isPowerPillActive = true;
         powerPillTimer = 10f;
         
-        // 改变幽灵状态为害怕
         GhostController[] ghosts = FindObjectsOfType<GhostController>();
         foreach (GhostController ghost in ghosts)
         {
@@ -94,14 +95,12 @@ public class GameManager : MonoBehaviour
             }
         }
         
-        // 改变背景音乐
         if (scaredMusic != null)
         {
             audioSource.clip = scaredMusic;
             audioSource.Play();
         }
         
-        // 更新恐惧时间显示
         UpdateGhostScaredTimerUI();
     }
     
@@ -112,7 +111,6 @@ public class GameManager : MonoBehaviour
         
         if (powerPillTimer <= 3f)
         {
-            // 设置幽灵为恢复状态
             GhostController[] ghosts = FindObjectsOfType<GhostController>();
             foreach (GhostController ghost in ghosts)
             {
@@ -128,7 +126,6 @@ public class GameManager : MonoBehaviour
             isPowerPillActive = false;
             powerPillTimer = 0f;
             
-            // 重置幽灵为正常状态（除了死亡的）
             GhostController[] ghosts = FindObjectsOfType<GhostController>();
             foreach (GhostController ghost in ghosts)
             {
@@ -138,19 +135,76 @@ public class GameManager : MonoBehaviour
                 }
             }
             
-            // 改变背景音乐回正常
             if (normalMusic != null)
             {
                 audioSource.clip = normalMusic;
                 audioSource.Play();
             }
             
-            // 隐藏恐惧时间显示
             UpdateGhostScaredTimerUI();
         }
     }
     
-    // 新增：更新游戏时间显示
+    private IEnumerator DeathSequence()
+{
+    isDeathSequenceActive = true;
+    Debug.Log("=== DEATH SEQUENCE STARTED ===");
+    
+    // 先触发 PacStudent 的死亡动画
+    PacStudentController pacStudent = FindObjectOfType<PacStudentController>();
+    if (pacStudent != null)
+    {
+        pacStudent.Die(); // 这会播放死亡动画和粒子效果
+    }
+    
+    // 等待死亡动画播放完成（3秒）
+    yield return new WaitForSeconds(deathSequenceDuration);
+    
+    // 检查是否还有生命值
+    if (lives <= 0)
+    {
+        // 没有生命了，游戏结束
+        Debug.Log("No lives remaining, game over");
+        GameOver();
+    }
+    else
+    {
+        // 还有生命，重置游戏状态
+        Debug.Log("Respawning with remaining lives");
+        
+        // 重置 PacStudent
+        if (pacStudent != null)
+        {
+            pacStudent.Respawn();
+        }
+        
+        // 重置幽灵到初始位置和状态
+        GhostController[] ghosts = FindObjectsOfType<GhostController>();
+        foreach (GhostController ghost in ghosts)
+        {
+            ghost.ResetToInitialPosition();
+            ghost.SetNormal();
+        }
+    }
+    
+    isDeathSequenceActive = false;
+    Debug.Log("=== DEATH SEQUENCE COMPLETED ===");
+}
+
+public void PacStudentDied()
+{
+    if (isDeathSequenceActive) return;
+    
+    lives--;
+    UpdateUI();
+    UpdateLivesDisplay();
+    
+    Debug.Log($"PacStudent died! Lives remaining: {lives}");
+    
+    // 无论是否游戏结束，都要播放死亡动画
+    StartCoroutine(DeathSequence());
+}
+    
     private void UpdateGameTimerUI()
     {
         if (gameTimerText != null)
@@ -161,7 +215,6 @@ public class GameManager : MonoBehaviour
         }
     }
     
-    // 修改：更新幽灵恐惧时间显示
     private void UpdateGhostScaredTimerUI()
     {
         if (ghostScaredTimerText != null)
@@ -178,14 +231,11 @@ public class GameManager : MonoBehaviour
         }
     }
     
-    // 新增：更新生命显示（通过控制子对象激活状态）
     private void UpdateLivesDisplay()
     {
         if (livesContainer != null)
         {
             int childCount = livesContainer.transform.childCount;
-            
-            // 激活对应数量的生命图标
             for (int i = 0; i < childCount; i++)
             {
                 GameObject lifeIcon = livesContainer.transform.GetChild(i).gameObject;
@@ -194,88 +244,21 @@ public class GameManager : MonoBehaviour
         }
     }
     
-    public void PacStudentDied()
-    {
-        lives--;
-        UpdateUI();
-        UpdateLivesDisplay(); // 更新生命显示
-        
-        if (lives <= 0)
-        {
-            GameOver();
-        }
-        else
-        {
-            // 3秒后重生
-            Invoke("RespawnPacStudent", 3f);
-        }
-    }
+   
     
-    private void RespawnPacStudent()
-    {
-        PacStudentController pacStudent = FindObjectOfType<PacStudentController>();
-        if (pacStudent != null)
-        {
-            pacStudent.Respawn();
-        }
-        
-        // 重置幽灵到初始位置和状态
-        GhostController[] ghosts = FindObjectsOfType<GhostController>();
-        foreach (GhostController ghost in ghosts)
-        {
-            ghost.ResetToInitialPosition();
-        }
-    }
-    
-    public void PlayGhostEatenMusic()
-    {
-        if (ghostEatenMusic != null)
-        {
-            audioSource.clip = ghostEatenMusic;
-            audioSource.Play();
-        }
-        
-        // 3秒后回到害怕音乐（如果能量丸效果还在）
-        Invoke("ReturnToScaredMusic", 3f);
-    }
-    
-    private void ReturnToScaredMusic()
-    {
-        if (isPowerPillActive && scaredMusic != null)
-        {
-            audioSource.clip = scaredMusic;
-            audioSource.Play();
-        }
-        else if (normalMusic != null)
-        {
-            audioSource.clip = normalMusic;
-            audioSource.Play();
-        }
-    }
-    
-    // 修改：更新UI方法
     public void UpdateUI()
     {
-        // 更新分数
         if (scoreText != null)
             scoreText.text = "Score: " + score;
-        
-        // 生命显示已经在UpdateLivesDisplay中处理
-        // 游戏时间在Update中持续更新
-        // 恐惧时间在UpdatePowerPillTimer中更新
     }
     
     private void GameOver()
     {
-        // 处理游戏结束逻辑
         isGameRunning = false;
         Debug.Log("Game Over! Final Score: " + score + " Time: " + Mathf.FloorToInt(gameTime) + "s");
-        
-        // 可以在这里显示游戏结束UI
-        Time.timeScale = 0; // 暂停游戏
+        Time.timeScale = 0;
     }
     
-    // 新增：重新开始游戏
     public void RestartGame()
     {
         Time.timeScale = 1;
@@ -284,6 +267,7 @@ public class GameManager : MonoBehaviour
         gameTime = 0f;
         isGameRunning = true;
         isPowerPillActive = false;
+        isDeathSequenceActive = false;
         
         UpdateUI();
         UpdateLivesDisplay();

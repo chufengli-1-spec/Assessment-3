@@ -3,138 +3,197 @@ using System.Collections;
 
 public class GhostController : MonoBehaviour
 {
-    public GhostState CurrentState { get; private set; } = GhostState.Normal;
-    
-    [Header("Animator")]
-    public Animator animator;
-    
-    [Header("Settings")]
+    [Header("Ghost Settings")]
     public float normalSpeed = 2f;
     public float scaredSpeed = 1.5f;
-    public float deadSpeed = 4f;
+    public float recoveringSpeed = 1.8f;
     
-    [Header("Movement")]
-    public Vector2Int currentDirection = Vector2Int.right;
+    [Header("Animation")]
+    public Animator animator;
     
+    private GhostState currentState = GhostState.Normal;
     private Vector3 initialPosition;
-    private bool isRespawning = false;
+    private float currentSpeed;
     
-    // 添加移动组件引用（如果需要）
-    private MonoBehaviour movementComponent;
+    public GhostState CurrentState { get { return currentState; } }
     
-    private void Start()
+    void Start()
     {
         initialPosition = transform.position;
+        currentSpeed = normalSpeed;
         
-        // 尝试获取任何移动相关的组件
-        movementComponent = GetComponent<MonoBehaviour>();
+        if (animator == null)
+        {
+            animator = GetComponent<Animator>();
+        }
         
-        UpdateAnimatorState();
+        // 初始状态设置为 Normal
+        SetNormal();
+    }
+    
+    void Update()
+    {
+        // 注释掉移动，敌人原地不动
+        // MoveGhost();
     }
     
     public void SetNormal()
     {
-        if (CurrentState == GhostState.Dead) return;
+        if (currentState == GhostState.Dead) return;
         
-        CurrentState = GhostState.Normal;
-        // 如果有移动组件，可以在这里设置速度
-        UpdateAnimatorState();
+        currentState = GhostState.Normal;
+        currentSpeed = normalSpeed;
+        UpdateAnimator();
     }
     
     public void SetScared()
     {
-        if (CurrentState == GhostState.Dead) return;
+        if (currentState == GhostState.Dead) return;
         
-        CurrentState = GhostState.Scared;
-        // 如果有移动组件，可以在这里设置速度
-        UpdateAnimatorState();
+        currentState = GhostState.Scared;
+        currentSpeed = scaredSpeed;
+        UpdateAnimator();
     }
     
     public void SetRecovering()
     {
-        if (CurrentState == GhostState.Dead) return;
+        if (currentState == GhostState.Dead) return;
         
-        CurrentState = GhostState.Recovering;
-        // 如果有移动组件，可以在这里设置速度
-        UpdateAnimatorState();
+        currentState = GhostState.Recovering;
+        currentSpeed = recoveringSpeed;
+        UpdateAnimator();
+    }
+    
+    public void SetDead()
+    {
+        if (currentState == GhostState.Dead) return;
+        
+        Debug.Log($"{gameObject.name}: Setting state to Dead");
+        currentState = GhostState.Dead;
+        UpdateAnimator();
+        
+        // 3秒后复活
+        StartCoroutine(RespawnAfterDelay(3f));
     }
     
     public void Die()
     {
-        CurrentState = GhostState.Dead;
-        // 如果有移动组件，可以在这里设置速度
-        UpdateAnimatorState();
-        
-        // 开始重生计时器
-        StartCoroutine(RespawnAfterDelay(3f));
+        SetDead();
     }
     
     private IEnumerator RespawnAfterDelay(float delay)
     {
-        isRespawning = true;
+        Debug.Log($"{gameObject.name}: Starting respawn timer for {delay} seconds");
+        
         yield return new WaitForSeconds(delay);
-        isRespawning = false;
         
-        // 返回初始位置
-        transform.position = initialPosition;
-        
-        // 根据能量丸状态决定新状态
-        GameManager gameManager = FindObjectOfType<GameManager>();
-        if (gameManager != null && gameManager.IsPowerPillActive)
+        if (currentState == GhostState.Dead)
         {
-            if (gameManager.PowerPillTimeRemaining <= 3f)
+            Debug.Log($"{gameObject.name}: Respawning ghost");
+            
+            ResetToInitialPosition();
+            
+            // 检查能量丸效果是否还在
+            GameManager gameManager = FindObjectOfType<GameManager>();
+            if (gameManager != null && gameManager.IsPowerPillActive)
             {
-                SetRecovering();
+                Debug.Log($"{gameObject.name}: Power pill still active, checking remaining time: {gameManager.PowerPillTimeRemaining}");
+                
+                if (gameManager.PowerPillTimeRemaining <= 3f)
+                {
+                    SetRecovering();
+                }
+                else
+                {
+                    SetScared();
+                }
             }
             else
             {
-                SetScared();
+                SetNormal();
             }
         }
-        else
-        {
-            SetNormal();
-        }
+    }
+    
+    private void UpdateAnimator()
+    {
+        if (animator == null) return;
+
+        bool isNormal = (currentState == GhostState.Normal);
+        bool isScared = (currentState == GhostState.Scared);
+        bool isRecovering = (currentState == GhostState.Recovering);
+        bool isDead = (currentState == GhostState.Dead);
+
+        animator.SetBool("Normal", isNormal);
+        animator.SetBool("Scared", isScared);
+        animator.SetBool("Recovering", isRecovering);
+        animator.SetBool("Dead", isDead);
+        
+        Debug.Log($"{gameObject.name}: Animator updated - Normal: {isNormal}, Scared: {isScared}, Recovering: {isRecovering}, Dead: {isDead}");
+    }
+    
+    private void MoveGhost()
+    {
+        // 注释移动逻辑，敌人原地不动
+        // transform.Translate(Vector3.right * currentSpeed * Time.deltaTime);
     }
     
     public void ResetToInitialPosition()
     {
         transform.position = initialPosition;
-        SetNormal();
     }
     
-    private void UpdateAnimatorState()
+    private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (animator != null)
+        if (collision.CompareTag("Player"))
         {
-            animator.SetInteger("GhostState", (int)CurrentState);
+            HandlePlayerCollision();
         }
     }
     
-    // 简单的移动方向获取
-    public Vector2Int GetCurrentDirection()
-    {
-        return currentDirection;
-    }
+    private void HandlePlayerCollision()
+{
+    Debug.Log($"{gameObject.name}: HandlePlayerCollision - Current state: {currentState}");
     
-    // 设置速度的方法（如果需要）
-    public void SetSpeed(float speed)
+    switch (currentState)
     {
-        // 这里可以添加移动逻辑
-        // 例如：如果有Rigidbody，可以设置速度
-        Rigidbody2D rb = GetComponent<Rigidbody2D>();
-        if (rb != null)
-        {
-            // 根据当前方向设置速度
-            rb.velocity = new Vector2(currentDirection.x, currentDirection.y) * speed;
-        }
+        case GhostState.Normal:
+            // PacStudent 死亡
+            Debug.Log($"{gameObject.name}: Normal state - PacStudent should die");
+            GameManager gameManager = FindObjectOfType<GameManager>();
+            if (gameManager != null)
+            {
+                gameManager.PacStudentDied();
+            }
+            break;
+            
+        case GhostState.Scared:
+        case GhostState.Recovering:
+            // 幽灵被吃 - 按照新要求处理
+            Debug.Log($"{gameObject.name}: Scared/Recovering state - Ghost eaten, adding 300 points");
+            SetDead();
+            
+            // 通知 GameManager 加分（不需要播放音乐）
+            gameManager = FindObjectOfType<GameManager>();
+            if (gameManager != null)
+            {
+                gameManager.AddScore(300); // 改为300分
+                // 移除了 PlayGhostEatenMusic() 调用
+            }
+            break;
+            
+        case GhostState.Dead:
+            // 死亡状态不处理碰撞
+            Debug.Log($"{gameObject.name}: Dead state - Ignoring collision");
+            break;
     }
+}
 }
 
 public enum GhostState
 {
-    Normal = 0,
-    Scared = 1,
-    Recovering = 2,
-    Dead = 3
+    Normal,
+    Scared,
+    Recovering,
+    Dead
 }

@@ -615,13 +615,14 @@ public class PacStudentController : MonoBehaviour
             case 0: // Empty - walkable
             case 5: // Pellet - walkable
             case 6: // Power Pellet - walkable
+            case 8: // Ghost Exit - wall
                 return true;
             case 1: // Outside Corner - wall
             case 2: // Outside Wall - wall
             case 3: // Inside Corner - wall
             case 4: // Inside Wall - wall
             case 7: // T-Junction - wall
-            case 8: // Ghost Exit - wall
+            //case 8: // Ghost Exit - wall
             default:
                 return false;
         }
@@ -696,21 +697,39 @@ public class PacStudentController : MonoBehaviour
     }
 
     public void Die()
+{
+    if (isDead) return;
+    
+    isDead = true;
+    isLerping = false;
+
+    Debug.Log("PacStudent: Death sequence starting");
+
+    // 播放死亡动画
+    if (animator != null)
     {
-        isDead = true;
-        isLerping = false;
-
-        if (animator != null)
-            animator.Play(DIE_STATE);
-
-        if (deathParticle != null)
-            Instantiate(deathParticle, transform.position, Quaternion.identity);
-
-        StopMovementAudio();
-
-        if (gameManager != null)
-            gameManager.PacStudentDied();
+        animator.Play(DIE_STATE);
+        Debug.Log("PacStudent: Death animation played - " + DIE_STATE);
     }
+    else
+    {
+        Debug.LogError("PacStudent: Animator is null!");
+    }
+
+    // 播放死亡粒子效果
+    if (deathParticle != null)
+    {
+        Instantiate(deathParticle, transform.position, Quaternion.identity);
+        Debug.Log("PacStudent: Death particle effect created");
+    }
+
+    StopMovementAudio();
+
+    // 重要：移除这里的 gameManager.PacStudentDied() 调用
+    // 让 GameManager 在检测到碰撞时统一处理死亡序列
+    // if (gameManager != null)
+    //     gameManager.PacStudentDied(); // 注释掉这一行
+}
 
     public void Respawn()
     {

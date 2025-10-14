@@ -173,12 +173,7 @@ public class PacStudentCollisionHandler : MonoBehaviour
             Debug.Log("Scared ghost eaten! +300 points (via backup)");
         }
         
-        // 播放幽灵被吃音乐
-        if (gameManager != null)
-        {
-            gameManager.PlayGhostEatenMusic();
-            Debug.Log("Playing ghost eaten music");
-        }
+        
     }
     
     // 调试方法：检查当前状态
