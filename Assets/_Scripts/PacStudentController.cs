@@ -104,6 +104,8 @@ public class PacStudentController : MonoBehaviour
         audioSource.spatialBlend = 0f;
 
         UpdateAnimationDirection();
+        
+        Debug.Log("PacStudentController initialized");
     }
 
     void Update()
@@ -279,6 +281,9 @@ public class PacStudentController : MonoBehaviour
         Vector2Int lastInputDirection = GetDirectionFromKeyCode(lastInput);
         Vector2Int targetPos = currentGridPos + lastInputDirection;
 
+        Debug.Log($"TryMoveWithInput - LastInput: {lastInput}, Direction: {lastInputDirection}");
+        Debug.Log($"CurrentPos: {currentGridPos}, TargetPos: {targetPos}, Walkable: {IsPositionWalkable(targetPos)}");
+
         if (IsPositionWalkable(targetPos))
         {
             currentInput = lastInput;
@@ -289,6 +294,9 @@ public class PacStudentController : MonoBehaviour
             Vector2Int currentInputDirection = GetDirectionFromKeyCode(currentInput);
             targetPos = currentGridPos + currentInputDirection;
             
+            Debug.Log($"Primary direction blocked, trying current: {currentInput}, Direction: {currentInputDirection}");
+            Debug.Log($"CurrentPos: {currentGridPos}, TargetPos: {targetPos}, Walkable: {IsPositionWalkable(targetPos)}");
+            
             if (IsPositionWalkable(targetPos))
             {
                 StartLerping(currentInputDirection);
@@ -296,6 +304,7 @@ public class PacStudentController : MonoBehaviour
             else
             {
                 // 如果两个方向都不能走，触发墙壁碰撞
+                Debug.Log("Both directions blocked, calling HandleWallCollision");
                 HandleWallCollision(lastInputDirection);
             }
         }
@@ -305,9 +314,12 @@ public class PacStudentController : MonoBehaviour
     {
         targetGridPos = currentGridPos + direction;
         
+        Debug.Log($"StartLerping - Direction: {direction}, TargetGridPos: {targetGridPos}");
+        
         // 在开始移动前进行碰撞检测
         if (!IsPositionWalkable(targetGridPos))
         {
+            Debug.Log("StartLerping: Target position not walkable, triggering collision");
             HandleWallCollision(direction);
             return;
         }
@@ -319,6 +331,8 @@ public class PacStudentController : MonoBehaviour
         isLerping = true;
         
         UpdateAnimationDirection();
+        
+        Debug.Log($"StartLerping: Moving from {startPosition} to {targetPosition}");
     }
 
     private void ContinueLerping()
@@ -508,10 +522,17 @@ public class PacStudentController : MonoBehaviour
         
         if (coords.x < 0 || coords.x >= originalMapWidth || 
             coords.y < 0 || coords.y >= originalMapHeight)
+        {
+            Debug.Log($"IsPositionWalkable: Position {gridPosition} -> OUT OF BOUNDS");
             return false;
+        }
 
         int tile = levelGenerator.levelMap[coords.y, coords.x];
-        return IsTileWalkable(tile);
+        bool walkable = IsTileWalkable(tile);
+        
+        Debug.Log($"IsPositionWalkable: Position {gridPosition} -> Original {coords} -> Tile {tile} -> Walkable: {walkable}");
+        
+        return walkable;
     }
 
     private Vector2Int MapToOriginalQuadrant(Vector2Int fullPos)
@@ -586,25 +607,6 @@ public class PacStudentController : MonoBehaviour
         }
         
         Vector2Int result = new Vector2Int(originalX, originalY);
-        
-        // 详细调试信息（只输出特定区域以减少日志数量）
-        if (y >= 13 && y <= 18) // 只调试底部区域
-        {
-            Vector3 worldPos = GridToWorldPosition(fullPos);
-            string validity = (result.x >= 0 && result.x < originalMapWidth && result.y >= 0 && result.y < originalMapHeight) ? "VALID" : "INVALID";
-            
-            if (validity == "VALID")
-            {
-                int tile = levelGenerator.levelMap[result.y, result.x];
-                Debug.Log($"MapToOriginalQuadrant: Full{fullPos} -> World{worldPos} -> {quadrantName} -> Original{result} " +
-                         $"[Tile: {tile}, Walkable: {IsTileWalkable(tile)}] {validity}");
-            }
-            else
-            {
-                Debug.Log($"MapToOriginalQuadrant: Full{fullPos} -> World{worldPos} -> {quadrantName} -> Original{result} {validity}");
-            }
-        }
-        
         return result;
     }
 
@@ -615,14 +617,13 @@ public class PacStudentController : MonoBehaviour
             case 0: // Empty - walkable
             case 5: // Pellet - walkable
             case 6: // Power Pellet - walkable
-            case 8: // Ghost Exit - wall
+            case 8: // Ghost Exit - walkable
                 return true;
             case 1: // Outside Corner - wall
             case 2: // Outside Wall - wall
             case 3: // Inside Corner - wall
             case 4: // Inside Wall - wall
             case 7: // T-Junction - wall
-            //case 8: // Ghost Exit - wall
             default:
                 return false;
         }
@@ -663,31 +664,63 @@ public class PacStudentController : MonoBehaviour
     // =================== 碰撞相关方法 =====================
     public void HandleWallCollision(Vector2Int collisionDir)
     {
-        if (hasWallCollisionThisFrame) return;
+        if (hasWallCollisionThisFrame) 
+        {
+            Debug.Log("HandleWallCollision: Already processed this frame");
+            return;
+        }
         
         // 检查冷却时间
         if (Time.time - lastWallCollisionTime < wallCollisionCooldown)
+        {
+            Debug.Log($"HandleWallCollision: On cooldown ({Time.time - lastWallCollisionTime:F2}s)");
             return;
+        }
 
         hasWallCollisionThisFrame = true;
-        lastWallCollisionTime = Time.time; // 更新最后碰撞时间
+        lastWallCollisionTime = Time.time;
         
+        Debug.Log($"=== WALL COLLISION TRIGGERED ===");
+        Debug.Log($"Direction: {collisionDir}");
+        Debug.Log($"Position: {transform.position}");
+        Debug.Log($"Grid Position: {currentGridPos}");
+
         isLerping = false;
         transform.position = lastValidPosition;
         currentGridPos = WorldToGridPosition(lastValidPosition);
 
+        // 粒子效果生成
         if (wallCollisionParticle != null)
         {
-            Vector3 point = transform.position + new Vector3(collisionDir.x, collisionDir.y, 0) * 0.5f;
-            Instantiate(wallCollisionParticle, point, Quaternion.identity);
+            Vector3 collisionPoint = transform.position + new Vector3(collisionDir.x, collisionDir.y, 0) * 0.3f;
+            GameObject particleEffect = Instantiate(wallCollisionParticle, collisionPoint, Quaternion.identity);
+            Debug.Log($"Wall collision particle created at: {collisionPoint}");
+            
+            // 确保粒子系统会自动播放
+            ParticleSystem ps = particleEffect.GetComponent<ParticleSystem>();
+            if (ps != null)
+            {
+                ps.Play();
+                Debug.Log("Particle system played");
+            }
+        }
+        else
+        {
+            Debug.LogError("WallCollisionParticle is null! Please assign in inspector.");
         }
 
+        // 播放碰撞音效
         if (wallCollisionSound != null && audioSource != null)
         {
             audioSource.PlayOneShot(wallCollisionSound);
+            Debug.Log("Wall collision sound played");
+        }
+        else
+        {
+            Debug.LogError("WallCollisionSound or AudioSource is null!");
         }
 
-        Debug.Log("Wall collision detected! Stopped at: " + currentGridPos);
+        Debug.Log("Wall collision handled successfully!");
     }
 
     public void CollectPellet(int points)
@@ -697,39 +730,34 @@ public class PacStudentController : MonoBehaviour
     }
 
     public void Die()
-{
-    if (isDead) return;
-    
-    isDead = true;
-    isLerping = false;
-
-    Debug.Log("PacStudent: Death sequence starting");
-
-    // 播放死亡动画
-    if (animator != null)
     {
-        animator.Play(DIE_STATE);
-        Debug.Log("PacStudent: Death animation played - " + DIE_STATE);
-    }
-    else
-    {
-        Debug.LogError("PacStudent: Animator is null!");
-    }
+        if (isDead) return;
+        
+        isDead = true;
+        isLerping = false;
 
-    // 播放死亡粒子效果
-    if (deathParticle != null)
-    {
-        Instantiate(deathParticle, transform.position, Quaternion.identity);
-        Debug.Log("PacStudent: Death particle effect created");
+        Debug.Log("PacStudent: Death sequence starting");
+
+        // 播放死亡动画
+        if (animator != null)
+        {
+            animator.Play(DIE_STATE);
+            Debug.Log("PacStudent: Death animation played - " + DIE_STATE);
+        }
+        else
+        {
+            Debug.LogError("PacStudent: Animator is null!");
+        }
+
+        // 播放死亡粒子效果
+        if (deathParticle != null)
+        {
+            Instantiate(deathParticle, transform.position, Quaternion.identity);
+            Debug.Log("PacStudent: Death particle effect created");
+        }
+
+        StopMovementAudio();
     }
-
-    StopMovementAudio();
-
-    // 重要：移除这里的 gameManager.PacStudentDied() 调用
-    // 让 GameManager 在检测到碰撞时统一处理死亡序列
-    // if (gameManager != null)
-    //     gameManager.PacStudentDied(); // 注释掉这一行
-}
 
     public void Respawn()
     {
@@ -742,6 +770,8 @@ public class PacStudentController : MonoBehaviour
         currentInput = KeyCode.D;
 
         UpdateAnimationDirection();
+        
+        Debug.Log("PacStudent respawned");
     }
 
     public KeyCode GetCurrentDirection() { return currentInput; }
