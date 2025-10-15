@@ -490,38 +490,48 @@ public class PacStudentController : MonoBehaviour
     }
 
     private void CollectPelletAtPosition(Vector2Int gridPosition)
-    {
-         GameStartCountdown countdown = FindObjectOfType<GameStartCountdown>();
-        if (countdown != null && countdown.IsCountdownActive())
-            return;
+{
+    // 简化版：直接查找 GameStartCountdown
+    GameStartCountdown countdown = FindObjectOfType<GameStartCountdown>();
+    if (countdown != null && countdown.IsCountdownActive())
+        return;
              
-        // 找到该位置的豆子游戏对象并销毁
-        Vector3 worldPos = GridToWorldPosition(gridPosition);
-        Collider2D[] colliders = Physics2D.OverlapCircleAll(worldPos, 0.1f);
-        
-        foreach (Collider2D collider in colliders)
+    // 找到该位置的豆子游戏对象并销毁
+    Vector3 worldPos = GridToWorldPosition(gridPosition);
+    Collider2D[] colliders = Physics2D.OverlapCircleAll(worldPos, 0.1f);
+    
+    foreach (Collider2D collider in colliders)
+    {
+        if (collider != null && (collider.CompareTag("Pellet") || collider.CompareTag("PowerPill")))
         {
-            if (collider != null && (collider.CompareTag("Pellet") || collider.CompareTag("PowerPill")))
+            bool isPowerPill = collider.CompareTag("PowerPill");
+            
+            Destroy(collider.gameObject);
+            
+            // 通知GameManager豆子被收集
+            GameManager gameManager = FindObjectOfType<GameManager>();
+            if (gameManager != null)
             {
-                Destroy(collider.gameObject);
-                
-                // 根据类型加分
-                if (collider.CompareTag("Pellet"))
-                {
-                    CollectPellet(10);
-                }
-                else if (collider.CompareTag("PowerPill"))
-                {
-                    CollectPellet(50);
-                    if (gameManager != null)
-                    {
-                        gameManager.ActivatePowerPillMode();
-                    }
-                }
-                break;
+                gameManager.OnPelletCollected(isPowerPill);
             }
+            
+            // 根据类型加分
+            if (collider.CompareTag("Pellet"))
+            {
+                CollectPellet(10);
+            }
+            else if (collider.CompareTag("PowerPill"))
+            {
+                CollectPellet(50);
+                if (gameManager != null)
+                {
+                    gameManager.ActivatePowerPillMode();
+                }
+            }
+            break;
         }
     }
+}
 
     private bool IsPositionWalkable(Vector2Int gridPosition)
     {

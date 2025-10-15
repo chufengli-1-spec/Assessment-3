@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.SceneManagement; // 添加场景管理
 
 public class GameManager : MonoBehaviour
 {
@@ -17,6 +18,10 @@ public class GameManager : MonoBehaviour
     public TextMeshProUGUI countdownText;
     public float countdownInterval = 1f;
     
+    [Header("Game Over UI")]
+    public GameObject gameOverPanel; // 新增：游戏结束面板
+    public Text gameOverText; // 新增：游戏结束文本
+    
     [Header("Audio")]
     public AudioClip normalMusic;
     public AudioClip scaredMusic;
@@ -25,6 +30,7 @@ public class GameManager : MonoBehaviour
     [Header("Game Settings")]
     public int startingLives = 3;
     public float deathSequenceDuration = 3f;
+    public float gameOverDisplayDuration = 3f; // 新增：游戏结束显示时间
     
     [Header("Game References")]
     public PacStudentController playerController;
@@ -38,7 +44,12 @@ public class GameManager : MonoBehaviour
     private bool isDeathSequenceActive = false;
     private bool isGameRunning = false;
     private bool isCountdownActive = false;
+    private bool isGameOver = false; // 新增：游戏结束状态
     private float gameTime = 0f;
+    
+    // 豆子计数
+    private int totalPellets = 0;
+    private int collectedPellets = 0;
     
     public bool IsPowerPillActive { get { return isPowerPillActive; } }
     public float PowerPillTimeRemaining { get { return powerPillTimer; } }
@@ -59,13 +70,42 @@ public class GameManager : MonoBehaviour
         if (ghostTimerPanel != null)
             ghostTimerPanel.SetActive(false);
         
+        // 初始化游戏结束UI
+        if (gameOverPanel != null)
+            gameOverPanel.SetActive(false);
+        
         UpdateLivesDisplay();
+        
+        // 计算总豆子数
+        CountTotalPellets();
         
         // 初始化游戏开始UI
         InitializeGameStartUI();
         
         // 开始倒计时
         StartGameCountdown();
+    }
+    
+    // 计算场景中的总豆子数
+    private void CountTotalPellets()
+    {
+        GameObject[] pellets = GameObject.FindGameObjectsWithTag("Pellet");
+        GameObject[] powerPills = GameObject.FindGameObjectsWithTag("PowerPill");
+        totalPellets = pellets.Length + powerPills.Length;
+        Debug.Log($"Total pellets in scene: {totalPellets}");
+    }
+    
+    // 当豆子被收集时调用
+    public void OnPelletCollected(bool isPowerPill = false)
+    {
+        collectedPellets++;
+        Debug.Log($"Pellet collected: {collectedPellets}/{totalPellets}");
+        
+        // 检查是否所有豆子都被吃完
+        if (collectedPellets >= totalPellets)
+        {
+            StartCoroutine(GameOverSequence(true)); // 胜利结束
+        }
     }
     
     private void InitializeGameStartUI()
@@ -144,8 +184,9 @@ public class GameManager : MonoBehaviour
     {
         isGameRunning = true;
         gameTime = 0f;
+        UpdateGameTimerUI();
         
-        Debug.Log("Game Started!");
+        Debug.Log("Game Started! Timer reset to 00:00:00");
         
         // 启用玩家控制
         if (playerController != null)
@@ -184,7 +225,7 @@ public class GameManager : MonoBehaviour
     
     private void Update()
     {
-        if (isGameRunning && !isDeathSequenceActive && !isCountdownActive)
+        if (isGameRunning && !isDeathSequenceActive && !isCountdownActive && !isGameOver)
         {
             gameTime += Time.deltaTime;
             UpdateGameTimerUI();
@@ -208,7 +249,7 @@ public class GameManager : MonoBehaviour
     
     public void ActivatePowerPillMode()
     {
-        if (isDeathSequenceActive || !isGameRunning) return;
+        if (isDeathSequenceActive || !isGameRunning || isGameOver) return;
         
         isPowerPillActive = true;
         powerPillTimer = 10f;
@@ -292,7 +333,7 @@ public class GameManager : MonoBehaviour
         {
             // 没有生命了，游戏结束
             Debug.Log("No lives remaining, game over");
-            GameOver();
+            StartCoroutine(GameOverSequence(false)); // 失败结束
         }
         else
         {
@@ -322,6 +363,73 @@ public class GameManager : MonoBehaviour
         Debug.Log("=== DEATH SEQUENCE COMPLETED ===");
     }
     
+    // 新增：游戏结束序列
+    private IEnumerator GameOverSequence(bool isWin)
+    {
+        isGameOver = true;
+        isGameRunning = false;
+        
+        Debug.Log($"=== GAME OVER SEQUENCE STARTED === (Win: {isWin})");
+        
+        // 停止所有移动
+        if (playerController != null)
+        {
+            playerController.enabled = false;
+        }
+        SetGhostsActive(false);
+        
+        // 停止计时器
+        UpdateGameTimerUI();
+        
+        // 停止音乐
+        if (audioSource != null && audioSource.isPlaying)
+        {
+            audioSource.Stop();
+        }
+        
+        // 显示游戏结束UI
+        ShowGameOverUI(isWin);
+        
+        // 保存最高分
+        if (HighScoreManager.Instance != null)
+        {
+            bool newHighScore = HighScoreManager.Instance.CheckAndSaveHighScore(score, gameTime);
+            if (newHighScore)
+            {
+                Debug.Log("New high score saved!");
+            }
+        }
+        
+        // 等待3秒
+        yield return new WaitForSeconds(gameOverDisplayDuration);
+        
+        // 返回开始场景
+        ReturnToStartScene();
+    }
+    
+    // 显示游戏结束UI
+    private void ShowGameOverUI(bool isWin)
+    {
+        if (gameOverPanel != null)
+        {
+            gameOverPanel.SetActive(true);
+            
+            string resultText = isWin ? "VICTORY!" : "GAME OVER";
+            string timeString = FormatTime(gameTime);
+            
+            if (gameOverText != null)
+            {
+                gameOverText.text = $"{resultText}\nFinal Score: {score}\nTime: {timeString}";
+            }
+            
+            // 同时使用blockingImage
+            if (blockingImage != null)
+            {
+                blockingImage.SetActive(true);
+            }
+        }
+    }
+    
     private IEnumerator RespawnCountdown()
     {
         // 简短的复活倒计时
@@ -336,7 +444,7 @@ public class GameManager : MonoBehaviour
     
     public void PacStudentDied()
     {
-        if (isDeathSequenceActive) return;
+        if (isDeathSequenceActive || isGameOver) return;
         
         lives--;
         UpdateUI();
@@ -394,23 +502,25 @@ public class GameManager : MonoBehaviour
             scoreText.text = "Score: " + score;
     }
     
-    private void GameOver()
+    // 格式化时间
+    private string FormatTime(float time)
     {
-        isGameRunning = false;
-        Debug.Log("Game Over! Final Score: " + score + " Time: " + Mathf.FloorToInt(gameTime) + "s");
+        if (time <= 0f) 
+        {
+            return "00:00:00";
+        }
         
-        // 显示游戏结束UI
-        ShowGameOverUI();
+        int minutes = Mathf.FloorToInt(time / 60f);
+        int seconds = Mathf.FloorToInt(time % 60f);
+        int centiseconds = Mathf.FloorToInt((time * 100f) % 100f);
+        return string.Format("{0:00}:{1:00}:{2:00}", minutes, seconds, centiseconds);
     }
     
-    private void ShowGameOverUI()
+    // 返回开始场景
+    private void ReturnToStartScene()
     {
-        // 这里可以添加游戏结束的UI显示
-        if (countdownText != null)
-        {
-            countdownText.gameObject.SetActive(true);
-            countdownText.text = "GAME OVER\nScore: " + score + "\nTime: " + Mathf.FloorToInt(gameTime) + "s";
-        }
+        Debug.Log("Returning to Start Scene...");
+        SceneManager.LoadScene("StartScene"); // 替换为你的开始场景名称
     }
     
     public void RestartGame()
@@ -419,8 +529,10 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 1;
         lives = startingLives;
         score = 0;
+        collectedPellets = 0;
         gameTime = 0f;
         isGameRunning = false;
+        isGameOver = false;
         isPowerPillActive = false;
         isDeathSequenceActive = false;
         isCountdownActive = false;
@@ -431,7 +543,11 @@ public class GameManager : MonoBehaviour
         UpdateGameTimerUI();
         UpdateGhostScaredTimerUI();
         
-        // 隐藏游戏结束文本
+        // 隐藏游戏结束UI
+        if (gameOverPanel != null)
+            gameOverPanel.SetActive(false);
+        if (blockingImage != null)
+            blockingImage.SetActive(false);
         if (countdownText != null)
             countdownText.gameObject.SetActive(false);
         
@@ -451,9 +567,8 @@ public class GameManager : MonoBehaviour
             ghost.enabled = false;
         }
         
-        // 停止音乐
-        if (audioSource != null)
-            audioSource.Stop();
+        // 重新计算豆子
+        CountTotalPellets();
         
         // 重新开始倒计时
         StartGameCountdown();
@@ -462,7 +577,7 @@ public class GameManager : MonoBehaviour
     // 公共方法供其他脚本访问游戏状态
     public bool IsGameRunning()
     {
-        return isGameRunning && !isCountdownActive;
+        return isGameRunning && !isCountdownActive && !isGameOver;
     }
     
     public float GetGameTimer()
