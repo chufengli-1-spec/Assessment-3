@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
 using TMPro;
-using UnityEngine.SceneManagement; // 添加场景管理
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -19,8 +19,8 @@ public class GameManager : MonoBehaviour
     public float countdownInterval = 1f;
     
     [Header("Game Over UI")]
-    public GameObject gameOverPanel; // 新增：游戏结束面板
-    public Text gameOverText; // 新增：游戏结束文本
+    public GameObject gameOverPanel;
+    public Text gameOverText;
     
     [Header("Audio")]
     public AudioClip normalMusic;
@@ -30,12 +30,11 @@ public class GameManager : MonoBehaviour
     [Header("Game Settings")]
     public int startingLives = 3;
     public float deathSequenceDuration = 3f;
-    public float gameOverDisplayDuration = 3f; // 新增：游戏结束显示时间
+    public float gameOverDisplayDuration = 3f;
     
     [Header("Game References")]
     public PacStudentController playerController;
     
-    // 游戏状态
     private int score = 0;
     private int lives;
     private AudioSource audioSource;
@@ -44,10 +43,9 @@ public class GameManager : MonoBehaviour
     private bool isDeathSequenceActive = false;
     private bool isGameRunning = false;
     private bool isCountdownActive = false;
-    private bool isGameOver = false; // 新增：游戏结束状态
+    private bool isGameOver = false;
     private float gameTime = 0f;
     
-    // 豆子计数
     private int totalPellets = 0;
     private int collectedPellets = 0;
     
@@ -57,7 +55,8 @@ public class GameManager : MonoBehaviour
     public bool IsGameStarted { get { return isGameRunning && !isCountdownActive; } }
     
     private void Start()
-    {
+    {    
+        
         audioSource = GetComponent<AudioSource>();
         if (audioSource == null)
         {
@@ -70,41 +69,32 @@ public class GameManager : MonoBehaviour
         if (ghostTimerPanel != null)
             ghostTimerPanel.SetActive(false);
         
-        // 初始化游戏结束UI
         if (gameOverPanel != null)
             gameOverPanel.SetActive(false);
         
         UpdateLivesDisplay();
         
-        // 计算总豆子数
         CountTotalPellets();
         
-        // 初始化游戏开始UI
         InitializeGameStartUI();
         
-        // 开始倒计时
         StartGameCountdown();
     }
     
-    // 计算场景中的总豆子数
     private void CountTotalPellets()
     {
         GameObject[] pellets = GameObject.FindGameObjectsWithTag("Pellet");
         GameObject[] powerPills = GameObject.FindGameObjectsWithTag("PowerPill");
         totalPellets = pellets.Length + powerPills.Length;
-        Debug.Log($"Total pellets in scene: {totalPellets}");
     }
     
-    // 当豆子被收集时调用
     public void OnPelletCollected(bool isPowerPill = false)
     {
         collectedPellets++;
-        Debug.Log($"Pellet collected: {collectedPellets}/{totalPellets}");
         
-        // 检查是否所有豆子都被吃完
         if (collectedPellets >= totalPellets)
         {
-            StartCoroutine(GameOverSequence(true)); // 胜利结束
+            StartCoroutine(GameOverSequence(true));
         }
     }
     
@@ -131,50 +121,39 @@ public class GameManager : MonoBehaviour
         gameTime = 0f;
         UpdateGameTimerUI();
         
-        Debug.Log("Starting game countdown...");
-        
-        // 显示UI元素
         if (blockingImage != null) 
             blockingImage.SetActive(true);
         if (countdownText != null) 
             countdownText.gameObject.SetActive(true);
         
-        // 禁用玩家控制
         if (playerController != null)
         {
             playerController.enabled = false;
         }
         
-        // 禁用幽灵移动
         SetGhostsActive(false);
         
-        // 倒计时：3
         if (countdownText != null) 
             countdownText.text = "3";
         yield return new WaitForSeconds(countdownInterval);
         
-        // 倒计时：2
         if (countdownText != null) 
             countdownText.text = "2";
         yield return new WaitForSeconds(countdownInterval);
         
-        // 倒计时：1
         if (countdownText != null) 
             countdownText.text = "1";
         yield return new WaitForSeconds(countdownInterval);
         
-        // 显示GO!
         if (countdownText != null) 
             countdownText.text = "GO!";
         yield return new WaitForSeconds(countdownInterval);
         
-        // 隐藏UI元素
         if (blockingImage != null) 
             blockingImage.SetActive(false);
         if (countdownText != null) 
             countdownText.gameObject.SetActive(false);
         
-        // 开始游戏
         OnGameStart();
         
         isCountdownActive = false;
@@ -186,18 +165,13 @@ public class GameManager : MonoBehaviour
         gameTime = 0f;
         UpdateGameTimerUI();
         
-        Debug.Log("Game Started! Timer reset to 00:00:00");
-        
-        // 启用玩家控制
         if (playerController != null)
         {
             playerController.enabled = true;
         }
         
-        // 启用幽灵移动
         SetGhostsActive(true);
         
-        // 开始背景音乐
         if (normalMusic != null)
         {
             audioSource.clip = normalMusic;
@@ -316,37 +290,26 @@ public class GameManager : MonoBehaviour
     private IEnumerator DeathSequence()
     {
         isDeathSequenceActive = true;
-        Debug.Log("=== DEATH SEQUENCE STARTED ===");
         
-        // 先触发 PacStudent 的死亡动画
         PacStudentController pacStudent = FindObjectOfType<PacStudentController>();
         if (pacStudent != null)
         {
-            pacStudent.Die(); // 这会播放死亡动画和粒子效果
+            pacStudent.Die();
         }
         
-        // 等待死亡动画播放完成
         yield return new WaitForSeconds(deathSequenceDuration);
         
-        // 检查是否还有生命值
         if (lives <= 0)
         {
-            // 没有生命了，游戏结束
-            Debug.Log("No lives remaining, game over");
-            StartCoroutine(GameOverSequence(false)); // 失败结束
+            StartCoroutine(GameOverSequence(false));
         }
         else
         {
-            // 还有生命，重置游戏状态
-            Debug.Log("Respawning with remaining lives");
-            
-            // 重置 PacStudent
             if (pacStudent != null)
             {
                 pacStudent.Respawn();
             }
             
-            // 重置幽灵到初始位置和状态
             GhostController[] ghosts = FindObjectsOfType<GhostController>();
             foreach (GhostController ghost in ghosts)
             {
@@ -354,60 +317,43 @@ public class GameManager : MonoBehaviour
                 ghost.SetNormal();
             }
             
-            // 重新开始倒计时（短暂暂停后继续游戏）
             yield return new WaitForSeconds(1f);
             StartCoroutine(RespawnCountdown());
         }
         
         isDeathSequenceActive = false;
-        Debug.Log("=== DEATH SEQUENCE COMPLETED ===");
     }
     
-    // 新增：游戏结束序列
     private IEnumerator GameOverSequence(bool isWin)
     {
         isGameOver = true;
         isGameRunning = false;
         
-        Debug.Log($"=== GAME OVER SEQUENCE STARTED === (Win: {isWin})");
-        
-        // 停止所有移动
         if (playerController != null)
         {
             playerController.enabled = false;
         }
         SetGhostsActive(false);
         
-        // 停止计时器
         UpdateGameTimerUI();
         
-        // 停止音乐
         if (audioSource != null && audioSource.isPlaying)
         {
             audioSource.Stop();
         }
         
-        // 显示游戏结束UI
         ShowGameOverUI(isWin);
         
-        // 保存最高分
         if (HighScoreManager.Instance != null)
         {
-            bool newHighScore = HighScoreManager.Instance.CheckAndSaveHighScore(score, gameTime);
-            if (newHighScore)
-            {
-                Debug.Log("New high score saved!");
-            }
+            HighScoreManager.Instance.CheckAndSaveHighScore(score, gameTime);
         }
         
-        // 等待3秒
         yield return new WaitForSeconds(gameOverDisplayDuration);
         
-        // 返回开始场景
         ReturnToStartScene();
     }
     
-    // 显示游戏结束UI
     private void ShowGameOverUI(bool isWin)
     {
         if (gameOverPanel != null)
@@ -422,7 +368,6 @@ public class GameManager : MonoBehaviour
                 gameOverText.text = $"{resultText}\nFinal Score: {score}\nTime: {timeString}";
             }
             
-            // 同时使用blockingImage
             if (blockingImage != null)
             {
                 blockingImage.SetActive(true);
@@ -432,7 +377,6 @@ public class GameManager : MonoBehaviour
     
     private IEnumerator RespawnCountdown()
     {
-        // 简短的复活倒计时
         if (countdownText != null) 
         {
             countdownText.gameObject.SetActive(true);
@@ -450,9 +394,6 @@ public class GameManager : MonoBehaviour
         UpdateUI();
         UpdateLivesDisplay();
         
-        Debug.Log($"PacStudent died! Lives remaining: {lives}");
-        
-        // 无论是否游戏结束，都要播放死亡动画
         StartCoroutine(DeathSequence());
     }
 
@@ -468,20 +409,20 @@ public class GameManager : MonoBehaviour
     }
     
     private void UpdateGhostScaredTimerUI()
+{
+    if (ghostScaredTimerText != null)
     {
-        if (ghostScaredTimerText != null && ghostTimerPanel != null)
+        if (isPowerPillActive && powerPillTimer > 0)
         {
-            if (isPowerPillActive)
-            {
-                ghostScaredTimerText.text = Mathf.CeilToInt(powerPillTimer).ToString();
-                ghostTimerPanel.SetActive(true);
-            }
-            else
-            {
-                ghostTimerPanel.SetActive(false);
-            }
+            ghostScaredTimerText.text = Mathf.CeilToInt(powerPillTimer).ToString();
+            ghostScaredTimerText.gameObject.SetActive(true);
+        }
+        else
+        {
+            ghostScaredTimerText.gameObject.SetActive(false);
         }
     }
+}
     
     private void UpdateLivesDisplay()
     {
@@ -502,7 +443,6 @@ public class GameManager : MonoBehaviour
             scoreText.text = "Score: " + score;
     }
     
-    // 格式化时间
     private string FormatTime(float time)
     {
         if (time <= 0f) 
@@ -516,16 +456,13 @@ public class GameManager : MonoBehaviour
         return string.Format("{0:00}:{1:00}:{2:00}", minutes, seconds, centiseconds);
     }
     
-    // 返回开始场景
     private void ReturnToStartScene()
     {
-        Debug.Log("Returning to Start Scene...");
-        SceneManager.LoadScene("StartScene"); // 替换为你的开始场景名称
+        SceneManager.LoadScene("StartScene");
     }
     
     public void RestartGame()
     {
-        // 重置所有游戏状态
         Time.timeScale = 1;
         lives = startingLives;
         score = 0;
@@ -537,13 +474,11 @@ public class GameManager : MonoBehaviour
         isDeathSequenceActive = false;
         isCountdownActive = false;
         
-        // 重置UI
         UpdateUI();
         UpdateLivesDisplay();
         UpdateGameTimerUI();
         UpdateGhostScaredTimerUI();
         
-        // 隐藏游戏结束UI
         if (gameOverPanel != null)
             gameOverPanel.SetActive(false);
         if (blockingImage != null)
@@ -551,7 +486,6 @@ public class GameManager : MonoBehaviour
         if (countdownText != null)
             countdownText.gameObject.SetActive(false);
         
-        // 重置玩家和幽灵
         PacStudentController pacStudent = FindObjectOfType<PacStudentController>();
         if (pacStudent != null)
         {
@@ -567,14 +501,11 @@ public class GameManager : MonoBehaviour
             ghost.enabled = false;
         }
         
-        // 重新计算豆子
         CountTotalPellets();
         
-        // 重新开始倒计时
         StartGameCountdown();
     }
     
-    // 公共方法供其他脚本访问游戏状态
     public bool IsGameRunning()
     {
         return isGameRunning && !isCountdownActive && !isGameOver;

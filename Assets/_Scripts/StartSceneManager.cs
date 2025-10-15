@@ -14,13 +14,11 @@ public class StartSceneManager : MonoBehaviour
     {
         if (level1Button == null)
         {
-            Debug.LogError("Level1Button is not assigned in the Inspector!");
             return;
         }
 
         if (level2Button == null)
         {
-            Debug.LogError("Level2Button is not assigned in the Inspector!");
             return;
         }
 
@@ -30,29 +28,23 @@ public class StartSceneManager : MonoBehaviour
 
     void LoadLevel1()
     {
-        Debug.Log("Loading Level1 scene...");
-        
         if (IsSceneInBuildSettings(level1SceneName))
         {
             SceneManager.LoadScene(level1SceneName);
         }
         else
         {
-            Debug.LogError($"Scene '{level1SceneName}' is not in Build Settings!");
         }
     }
 
     void LoadLevel2()
     {
-        Debug.Log("Loading Design Iteration scene...");
-        
         if (IsSceneInBuildSettings(level2SceneName))
         {
             SceneManager.LoadScene(level2SceneName);
         }
         else
         {
-            Debug.Log("Level 2 is not available yet.");
         }
     }
 
