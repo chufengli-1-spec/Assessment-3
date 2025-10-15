@@ -110,6 +110,9 @@ public class PacStudentController : MonoBehaviour
 
     void Update()
     {
+        if (FindObjectOfType<GameStartCountdown>()?.IsCountdownActive() == true)
+            return;
+             
         if (levelGenerator == null || isDead) return;
 
         HandleInput();
@@ -488,6 +491,10 @@ public class PacStudentController : MonoBehaviour
 
     private void CollectPelletAtPosition(Vector2Int gridPosition)
     {
+         GameStartCountdown countdown = FindObjectOfType<GameStartCountdown>();
+        if (countdown != null && countdown.IsCountdownActive())
+            return;
+             
         // 找到该位置的豆子游戏对象并销毁
         Vector3 worldPos = GridToWorldPosition(gridPosition);
         Collider2D[] colliders = Physics2D.OverlapCircleAll(worldPos, 0.1f);
@@ -725,6 +732,10 @@ public class PacStudentController : MonoBehaviour
 
     public void CollectPellet(int points)
     {
+        GameStartCountdown countdown = FindObjectOfType<GameStartCountdown>();
+        if (countdown != null && countdown.IsCountdownActive())
+            return;
+        
         if (gameManager != null)
             gameManager.AddScore(points);
     }

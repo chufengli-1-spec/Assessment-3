@@ -1,20 +1,19 @@
 using UnityEngine;
 using System.Collections;
-using UnityEngine.UI; // 添加这个命名空间
+using UnityEngine.UI;
 
 public class GameStartCountdown : MonoBehaviour
 {
     [Header("UI References")]
     public GameObject blockingImage;
-    public Text countdownText; // 改为 Legacy Text
+    public Text countdownText;
     
     [Header("Countdown Settings")]
     public float countdownInterval = 1f;
     
     [Header("Game References")]
     public PacStudentController playerController;
-    public AudioSource backgroundMusic;
-    public AudioClip normalStateBGM;
+    // 移除了背景音乐相关的字段
     
     private bool isCountdownActive = false;
     
@@ -160,21 +159,7 @@ public class GameStartCountdown : MonoBehaviour
             Debug.Log("✓ Player controller ENABLED");
         }
         
-        // 开始背景音乐
-        if (backgroundMusic != null && normalStateBGM != null)
-        {
-            backgroundMusic.clip = normalStateBGM;
-            backgroundMusic.loop = true;
-            backgroundMusic.Play();
-            Debug.Log("✓ Background music STARTED");
-        }
-        else
-        {
-            if (backgroundMusic == null)
-                Debug.LogError("✗ BackgroundMusic AudioSource is null");
-            if (normalStateBGM == null)
-                Debug.LogError("✗ NormalStateBGM AudioClip is null");
-        }
+        // 移除了背景音乐播放代码
         
         // 通知GameManager游戏开始
         GameManager gameManager = FindObjectOfType<GameManager>();

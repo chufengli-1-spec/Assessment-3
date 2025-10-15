@@ -198,6 +198,10 @@ public class GameManager : MonoBehaviour
     
     public void AddScore(int points)
     {
+        GameStartCountdown countdown = FindObjectOfType<GameStartCountdown>();
+        if (countdown != null && countdown.IsCountdownActive())
+            return;
+        
         score += points;
         UpdateUI();
     }
@@ -343,14 +347,15 @@ public class GameManager : MonoBehaviour
         // 无论是否游戏结束，都要播放死亡动画
         StartCoroutine(DeathSequence());
     }
-    
+
     private void UpdateGameTimerUI()
     {
         if (gameTimerText != null)
         {
             int minutes = Mathf.FloorToInt(gameTime / 60f);
             int seconds = Mathf.FloorToInt(gameTime % 60f);
-            gameTimerText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
+            int centiseconds = Mathf.FloorToInt((gameTime * 100f) % 100f);
+            gameTimerText.text = string.Format("{0:00}:{1:00}:{2:00}", minutes, seconds, centiseconds);
         }
     }
     
