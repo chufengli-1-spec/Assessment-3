@@ -16,7 +16,7 @@ public class GhostController : MonoBehaviour
     public float normalSpeed = 2.7f;
     public float scaredSpeed = 1.35f;
     public float recoveringSpeed = 1.35f;
-    public float deadSpeed = 1.35f;
+    public float deadSpeed = 4.0f;
     
     [Header("Ghost Identity")]
     public int ghostID = 1;
@@ -39,7 +39,7 @@ public class GhostController : MonoBehaviour
     
     // 移动历史记录
     private Queue<Vector2Int> positionHistory = new Queue<Vector2Int>();
-    private const int HISTORY_SIZE = 4;
+    private const int HISTORY_SIZE = 2;
     
     private PacStudentController pacStudent;
     private LevelGenerator levelGenerator;
@@ -47,21 +47,11 @@ public class GhostController : MonoBehaviour
     private int originalMapWidth;
     private int originalMapHeight;
     
-    // 修正的产卵区边界和出口位置
+    // 产卵区边界
     private readonly float SPAWN_MIN_X = -10f;
     private readonly float SPAWN_MAX_X = -3f;
     private readonly float SPAWN_MIN_Y = -6f;
     private readonly float SPAWN_MAX_Y = -2f;
-    
-    // 出口位置
-    private readonly Vector3 TOP_EXIT_LEFT = new Vector3(-7f, -2f, 0f);
-    private readonly Vector3 TOP_EXIT_RIGHT = new Vector3(-6f, -2f, 0f);
-    private readonly Vector3 BOTTOM_EXIT_LEFT = new Vector3(-7f, -6f, 0f);
-    private readonly Vector3 BOTTOM_EXIT_RIGHT = new Vector3(-6f, -6f, 0f);
-    
-    // 出口目标位置（产卵区外）
-    private readonly Vector3 TOP_TARGET = new Vector3(-6f, -1f, 0f);  // 上方出口目标
-    private readonly Vector3 BOTTOM_TARGET = new Vector3(-6f, -7f, 0f); // 下方出口目标
     
     public GhostState CurrentState { get { return currentState; } }
     
@@ -86,23 +76,22 @@ public class GhostController : MonoBehaviour
         currentGridPos = WorldToGridPosition(transform.position);
         targetPosition = transform.position;
         
-        // 初始化位置历史
         RecordPosition(currentGridPos);
         
         // 设置初始方向
         if (ghostID == 1 || ghostID == 3)
         {
-            currentDirection = Vector3.up; // 向上离开
+            currentDirection = Vector3.up;
         }
         else
         {
-            currentDirection = Vector3.down; // 向下离开
+            currentDirection = Vector3.down;
         }
         lastDirection = -currentDirection;
         
         SetNormal();
         
-        Debug.Log($"Ghost {ghostID} initialized at {transform.position}");
+        Debug.Log($"Ghost {ghostID} 初始化在位置: {transform.position}, 网格位置: {currentGridPos}");
     }
     
     void Update()
@@ -111,7 +100,7 @@ public class GhostController : MonoBehaviour
         
         if (currentState == GhostState.Dead)
         {
-            MoveTowardsSpawn();
+            HandleDeadState();
             return;
         }
         
@@ -127,13 +116,39 @@ public class GhostController : MonoBehaviour
         UpdateAnimation();
     }
     
+    private void HandleDeadState()
+    {
+        Debug.Log($"Ghost {ghostID} 死亡状态处理中... 当前位置: {transform.position}, 在产卵区: {IsInSpawnArea(transform.position)}");
+        
+        Vector3 spawnCenter = new Vector3((SPAWN_MIN_X + SPAWN_MAX_X) / 2, (SPAWN_MIN_Y + SPAWN_MAX_Y) / 2, 0);
+        float distanceToSpawn = Vector3.Distance(transform.position, spawnCenter);
+        
+        Debug.Log($"Ghost {ghostID} 距离出生点: {distanceToSpawn}");
+        
+        if (distanceToSpawn < 0.5f) // 到达出生区
+        {
+            Debug.Log($"Ghost {ghostID} 到达出生区，准备复活");
+            OnReachedSpawnArea();
+        }
+        else
+        {
+            // 直接移动回出生区
+            Vector3 directionToSpawn = (spawnCenter - transform.position).normalized;
+            transform.position += directionToSpawn * deadSpeed * Time.deltaTime;
+            Debug.Log($"Ghost {ghostID} 正在返回出生区，方向: {directionToSpawn}");
+        }
+    }
+    
     private void MakeMovementDecision()
     {
         if (isMoving) return;
         
-        // 核心逻辑：如果在产卵区内，强制前往出口
+        Debug.Log($"Ghost {ghostID} 做出移动决策，状态: {currentState}, 位置: {transform.position}");
+        
+        // 如果在产卵区内，强制前往出口
         if (IsInSpawnArea(transform.position) && !hasExitedSpawn)
         {
+            Debug.Log($"Ghost {ghostID} 在产卵区内，强制离开");
             ForceExitSpawn();
             return;
         }
@@ -143,6 +158,7 @@ public class GhostController : MonoBehaviour
         
         if (possibleDirections.Length == 0) 
         {
+            Debug.Log($"Ghost {ghostID} 没有可用方向，处理无方向情况");
             HandleNoPossibleDirections();
             return;
         }
@@ -153,28 +169,32 @@ public class GhostController : MonoBehaviour
         currentDirection = selectedDirection;
         StartMovement(selectedDirection);
     }
-    
+
     private void ForceExitSpawn()
     {
+        Debug.Log($"Ghost {ghostID} 强制离开产卵区");
+
         Vector3 targetPosition;
         if (ghostID == 1 || ghostID == 3)
         {
-            // 幽灵1和3：前往上方出口目标
-            targetPosition = TOP_TARGET;
+            targetPosition = new Vector3(-6f, -1f, 0f); // 上方出口
         }
         else
         {
-            // 幽灵2和4：前往下方出口目标
-            targetPosition = BOTTOM_TARGET;
+            targetPosition = new Vector3(-6f, -7f, 0f); // 下方出口
         }
-        
-        // 计算方向
+
         Vector3 directionToTarget = (targetPosition - transform.position).normalized;
         Vector3 gridDirection = RoundToGridDirection(directionToTarget);
-        
-        // 检查该方向是否可行
+
         Vector2Int targetGridPos = currentGridPos + WorldToGridDirection(gridDirection);
-        if (IsPositionWalkable(targetGridPos))
+
+        // 检查目标位置是否可行且不是幽灵出口（除非死亡状态）
+        bool isWalkable = currentState == GhostState.Dead ?
+            IsPositionWalkableForDeadGhost(targetGridPos) :
+            IsPositionWalkable(targetGridPos);
+
+        if (isWalkable && !IsPreviousPosition(targetGridPos))
         {
             lastDirection = currentDirection;
             currentDirection = gridDirection;
@@ -182,89 +202,124 @@ public class GhostController : MonoBehaviour
         }
         else
         {
-            // 如果首选方向不行，尝试其他能到达目标的方向
             Vector3[] possibleDirections = GetPossibleDirections();
             Vector3 bestDirection = FindBestDirectionToTarget(possibleDirections, targetPosition);
-            
+
             if (bestDirection != Vector3.zero)
             {
                 lastDirection = currentDirection;
                 currentDirection = bestDirection;
                 StartMovement(bestDirection);
             }
-            else
+            else if (possibleDirections.Length > 0)
             {
-                // 实在找不到路径，使用随机方向
-                if (possibleDirections.Length > 0)
-                {
-                    lastDirection = currentDirection;
-                    currentDirection = possibleDirections[0];
-                    StartMovement(possibleDirections[0]);
-                }
+                lastDirection = currentDirection;
+                currentDirection = possibleDirections[0];
+                StartMovement(possibleDirections[0]);
             }
         }
-        
+
         // 检查是否已经离开产卵区
         Vector2Int testPos = currentGridPos + WorldToGridDirection(currentDirection);
         Vector3 testWorldPos = GridToWorldPosition(testPos);
         if (!IsInSpawnArea(testWorldPos))
         {
             hasExitedSpawn = true;
+            Debug.Log($"Ghost {ghostID} 已离开产卵区");
         }
     }
+private bool IsPositionWalkableForDeadGhost(Vector2Int gridPosition)
+{
+    Vector2Int coords = MapToOriginalQuadrant(gridPosition);
     
-    private Vector3 FindBestDirectionToTarget(Vector3[] possibleDirections, Vector3 target)
+    if (coords.x < 0 || coords.x >= originalMapWidth || 
+        coords.y < 0 || coords.y >= originalMapHeight)
     {
-        Vector3 bestDirection = Vector3.zero;
-        float bestDistance = float.MaxValue;
-        
-        foreach (Vector3 dir in possibleDirections)
-        {
-            Vector3 newPos = GridToWorldPosition(currentGridPos + WorldToGridDirection(dir));
-            float distance = Vector3.Distance(newPos, target);
-            if (distance < bestDistance)
-            {
-                bestDistance = distance;
-                bestDirection = dir;
-            }
-        }
-        
-        return bestDirection;
+        return false;
     }
+
+    int tile = levelGenerator.levelMap[coords.y, coords.x];
+    // 死亡状态可以穿过所有路径，包括幽灵出口
+    return tile == 0 || tile == 5 || tile == 6 || tile == 8;
+}
+
+// 死亡状态的专用行走检测（可以穿过所有路径包括幽灵出口）
+private bool IsPositionWalkable(Vector2Int gridPosition)
+{
+    if (currentState == GhostState.Dead) return true;
     
-    private Vector3 RoundToGridDirection(Vector3 direction)
+    Vector2Int coords = MapToOriginalQuadrant(gridPosition);
+    
+    if (coords.x < 0 || coords.x >= originalMapWidth || 
+        coords.y < 0 || coords.y >= originalMapHeight)
     {
-        float absX = Mathf.Abs(direction.x);
-        float absY = Mathf.Abs(direction.y);
-        
-        if (absX > absY)
+        return false;
+    }
+
+    int tile = levelGenerator.levelMap[coords.y, coords.x];
+    
+    // 非死亡状态下禁止进入幽灵出口 (tile 8)
+    if (tile == 8 && currentState != GhostState.Dead)
+    {
+        // 允许在产卵区内且尚未离开的幽灵通过出口
+        if (IsInSpawnArea(GridToWorldPosition(currentGridPos)) && !hasExitedSpawn)
         {
-            return new Vector3(Mathf.Sign(direction.x), 0, 0);
+            Debug.Log($"Ghost {ghostID} 允许通过出口离开产卵区 (IsPositionWalkable)");
+            return true;
         }
         else
         {
-            return new Vector3(0, Mathf.Sign(direction.y), 0);
+            return false;
         }
     }
     
+    return tile == 0 || tile == 5 || tile == 6 || tile == 8;
+}
     private void StartMovement(Vector3 direction)
+{
+    Vector2Int directionGrid = WorldToGridDirection(direction);
+    targetGridPos = currentGridPos + directionGrid;
+    
+    Debug.Log($"Ghost {ghostID} 开始移动，方向: {direction}, 目标网格: {targetGridPos}");
+    
+    // 根据状态使用不同的行走检测
+    bool isWalkable = currentState == GhostState.Dead ? 
+        IsPositionWalkableForDeadGhost(targetGridPos) : 
+        IsPositionWalkable(targetGridPos);
+    
+    if (!isWalkable)
     {
-        Vector2Int directionGrid = WorldToGridDirection(direction);
-        targetGridPos = currentGridPos + directionGrid;
-        
-        if (!IsPositionWalkable(targetGridPos))
-        {
-            MakeMovementDecision();
-            return;
-        }
-        
-        startPosition = GridToWorldPosition(currentGridPos);
-        targetPosition = GridToWorldPosition(targetGridPos);
-        
-        lerpProgress = 0f;
-        isMoving = true;
+        Debug.Log($"Ghost {ghostID} 目标位置不可行走，重新决策");
+        MakeMovementDecision();
+        return;
     }
     
+    startPosition = GridToWorldPosition(currentGridPos);
+    targetPosition = GridToWorldPosition(targetGridPos);
+    
+    lerpProgress = 0f;
+    isMoving = true;
+}
+    
+
+private Vector3 FindBestDirectionToTarget(Vector3[] possibleDirections, Vector3 target)
+{
+    Vector3 bestDirection = Vector3.zero;
+    float bestDistance = float.MaxValue;
+    
+    foreach (Vector3 dir in possibleDirections)
+    {
+        Vector3 newPos = GridToWorldPosition(currentGridPos + WorldToGridDirection(dir));
+        float distance = Vector3.Distance(newPos, target);
+        if (distance < bestDistance)
+        {
+            bestDistance = distance;
+            bestDirection = dir;
+        }
+    }
+    
+    return bestDirection;
+}
     private void ContinueLerping()
     {
         lerpProgress += Time.deltaTime * currentSpeed;
@@ -278,10 +333,9 @@ public class GhostController : MonoBehaviour
             currentGridPos = targetGridPos;
             isMoving = false;
             
-            // 记录位置历史
             RecordPosition(currentGridPos);
             
-            // 检查是否成功离开产卵区
+            // 检查是否在产卵区内
             if (IsInSpawnArea(transform.position))
             {
                 hasExitedSpawn = false;
@@ -290,121 +344,107 @@ public class GhostController : MonoBehaviour
             {
                 hasExitedSpawn = true;
             }
-        }
-    }
-    
-    private void MoveTowardsSpawn()
-    {
-        Vector3 spawnCenter = new Vector3((SPAWN_MIN_X + SPAWN_MAX_X) / 2, (SPAWN_MIN_Y + SPAWN_MAX_Y) / 2, 0);
-        Vector3 directionToSpawn = (spawnCenter - transform.position).normalized;
-        transform.position += directionToSpawn * deadSpeed * Time.deltaTime;
-        
-        if (IsInSpawnArea(transform.position))
-        {
-            OnReachedSpawnArea();
+            
+            Debug.Log($"Ghost {ghostID} 移动完成，新位置: {transform.position}, 网格: {currentGridPos}");
         }
     }
     
     private void OnReachedSpawnArea()
+{
+    if (currentState == GhostState.Dead)
     {
-        if (currentState == GhostState.Dead)
+        Debug.Log($"=== Ghost {ghostID} 到达出生区，开始复活过程 ===");
+        
+        // 首先重置到初始位置
+        ResetToInitialPosition();
+        
+        // 根据游戏状态设置新的状态
+        if (gameManager != null && gameManager.IsPowerPillActive)
         {
-            ResetToInitialPosition();
-            
-            if (gameManager != null && gameManager.IsPowerPillActive)
+            if (gameManager.PowerPillTimeRemaining <= 3f)
             {
-                if (gameManager.PowerPillTimeRemaining <= 3f)
-                {
-                    SetRecovering();
-                }
-                else
-                {
-                    SetScared();
-                }
+                SetRecovering();
             }
             else
             {
-                SetNormal();
+                SetScared();
             }
-            
-            hasExitedSpawn = false;
         }
+        else
+        {
+            SetNormal();
+        }
+        
+        hasExitedSpawn = false;
+        
+        // 确保动画状态正确更新
+        UpdateAnimation();
+        
+        Debug.Log($"=== Ghost {ghostID} 复活完成，新状态: {currentState} ===");
     }
+}
     
     private Vector3[] GetPossibleDirections()
     {
         List<Vector3> directions = new List<Vector3>();
         Vector3[] checkDirections = { Vector3.up, Vector3.down, Vector3.left, Vector3.right };
         
-        // 严格禁用回头：只收集所有非反向的有效方向
         foreach (Vector3 dir in checkDirections)
         {
-            if (IsDirectionValid(dir) && dir != -lastDirection)
+            Vector2Int testGridPos = currentGridPos + WorldToGridDirection(dir);
+            
+            if (IsDirectionValid(dir) && !IsPreviousPosition(testGridPos))
             {
                 directions.Add(dir);
             }
         }
         
-        // 如果有非反向方向可用，直接返回
-        if (directions.Count > 0)
-        {
-            return directions.ToArray();
-        }
-        
-        // 只有在完全没有其他方向时，才考虑反向
-        Vector3 reverseDirection = -lastDirection;
-        if (IsDirectionValid(reverseDirection))
-        {
-            directions.Add(reverseDirection);
-        }
-        
+        Debug.Log($"Ghost {ghostID} 可用方向: {directions.Count}");
         return directions.ToArray();
     }
     
-    private bool HasMultipleExits(Vector2Int gridPos, Vector3 incomingDirection)
+    private bool IsPreviousPosition(Vector2Int gridPos)
     {
-        Vector3[] checkDirections = { Vector3.up, Vector3.down, Vector3.left, Vector3.right };
-        int validDirections = 0;
+        if (positionHistory.Count < 1) return false;
         
-        foreach (Vector3 dir in checkDirections)
-        {
-            // 排除回头路（相对于 incomingDirection）
-            if (dir != -incomingDirection)
-            {
-                Vector2Int testGridPos = gridPos + WorldToGridDirection(dir);
-                if (IsPositionWalkable(testGridPos))
-                {
-                    validDirections++;
-                    if (validDirections > 1) return true; // 有多个出口
-                }
-            }
-        }
+        Vector2Int[] historyArray = positionHistory.ToArray();
+        Vector2Int previousPosition = historyArray[0];
         
-        return false; // 只有一个或没有出口
+        return gridPos == previousPosition;
     }
     
     private bool IsDirectionValid(Vector3 direction)
+{
+    Vector2Int directionGrid = WorldToGridDirection(direction);
+    Vector2Int newGridPos = currentGridPos + directionGrid;
+    
+    // 如果是非死亡状态，检查目标位置是否是幽灵出口
+    if (currentState != GhostState.Dead)
     {
-        Vector2Int directionGrid = WorldToGridDirection(direction);
-        Vector2Int newGridPos = currentGridPos + directionGrid;
-        return IsPositionWalkable(newGridPos);
+        Vector2Int coords = MapToOriginalQuadrant(newGridPos);
+        if (coords.x >= 0 && coords.x < originalMapWidth && 
+            coords.y >= 0 && coords.y < originalMapHeight)
+        {
+            int tile = levelGenerator.levelMap[coords.y, coords.x];
+            if (tile == 8)
+            {
+                // 允许在产卵区内且尚未离开的幽灵通过出口
+                if (IsInSpawnArea(transform.position) && !hasExitedSpawn)
+                {
+                    Debug.Log($"Ghost {ghostID} 允许通过出口离开产卵区");
+                    // 允许通过
+                }
+                else
+                {
+                    Debug.Log($"Ghost {ghostID} 禁止进入幽灵出口，状态: {currentState}, 已离开产卵区: {hasExitedSpawn}");
+                    return false;
+                }
+            }
+        }
     }
     
-    private bool IsPositionWalkable(Vector2Int gridPosition)
-    {
-        if (currentState == GhostState.Dead) return true;
-        
-        Vector2Int coords = MapToOriginalQuadrant(gridPosition);
-        
-        if (coords.x < 0 || coords.x >= originalMapWidth || 
-            coords.y < 0 || coords.y >= originalMapHeight)
-        {
-            return false;
-        }
-
-        int tile = levelGenerator.levelMap[coords.y, coords.x];
-        return tile == 0 || tile == 5 || tile == 6 || tile == 8;
-    }
+    return IsPositionWalkable(newGridPos);
+}
     
     private bool IsInSpawnArea(Vector3 position)
     {
@@ -414,18 +454,35 @@ public class GhostController : MonoBehaviour
     
     private void HandleNoPossibleDirections()
     {
-        // 强制选择一个方向
         Vector3[] allDirections = { Vector3.up, Vector3.down, Vector3.left, Vector3.right };
+        List<Vector3> validDirections = new List<Vector3>();
+        
         foreach (Vector3 dir in allDirections)
         {
             Vector2Int testGridPos = currentGridPos + WorldToGridDirection(dir);
-            if (IsPositionWalkable(testGridPos))
+            if (IsPositionWalkable(testGridPos) && !IsPreviousPosition(testGridPos))
             {
-                lastDirection = currentDirection;
-                currentDirection = dir;
-                StartMovement(dir);
-                return;
+                validDirections.Add(dir);
             }
+        }
+        
+        if (validDirections.Count == 0)
+        {
+            foreach (Vector3 dir in allDirections)
+            {
+                Vector2Int testGridPos = currentGridPos + WorldToGridDirection(dir);
+                if (IsPositionWalkable(testGridPos))
+                {
+                    validDirections.Add(dir);
+                }
+            }
+        }
+        
+        if (validDirections.Count > 0)
+        {
+            lastDirection = currentDirection;
+            currentDirection = validDirections[0];
+            StartMovement(validDirections[0]);
         }
     }
     
@@ -437,14 +494,14 @@ public class GhostController : MonoBehaviour
         {
             case GhostState.Scared:
             case GhostState.Recovering:
-                return GetGhost1Direction(possibleDirections); // 恐惧状态也用幽灵1行为
+                return GetGhost1Direction(possibleDirections);
             case GhostState.Normal:
                 switch (ghostID)
                 {
-                    case 1: return GetGhost1Direction(possibleDirections); // 幽灵1：选择更远的方向
-                    case 2: return GetGhost2Direction(possibleDirections); // 幽灵2：选择更近的方向
-                    case 3: return GetRandomDirection(possibleDirections); // 幽灵3：随机
-                    case 4: return GetRandomDirection(possibleDirections); // 幽灵4：随机（暂时）
+                    case 1: return GetGhost1Direction(possibleDirections);
+                    case 2: return GetGhost2Direction(possibleDirections);
+                    case 3: return GetRandomDirection(possibleDirections);
+                    case 4: return GetRandomDirection(possibleDirections);
                     default: return GetRandomDirection(possibleDirections);
                 }
             default:
@@ -454,7 +511,6 @@ public class GhostController : MonoBehaviour
     
     private Vector3 GetGhost1Direction(Vector3[] possibleDirections)
     {
-        // 优先选择不会导致震荡的方向
         List<Vector3> safeDirections = new List<Vector3>();
         List<Vector3> riskyDirections = new List<Vector3>();
         
@@ -471,14 +527,11 @@ public class GhostController : MonoBehaviour
             }
         }
         
-        // 优先在安全方向中选择
         Vector3[] candidates = safeDirections.Count > 0 ? safeDirections.ToArray() : riskyDirections.ToArray();
         
-        if (candidates.Length == 0) return possibleDirections[0];
+        if (candidates.Length == 0) return possibleDirections.Length > 0 ? possibleDirections[0] : Vector3.up;
         
-        // 原有的距离计算逻辑
         Vector3 playerPos = pacStudent.transform.position;
-        Vector3 currentPos = transform.position;
         
         Vector3 bestDirection = candidates[0];
         float maxDistance = -1f;
@@ -500,7 +553,6 @@ public class GhostController : MonoBehaviour
     
     private Vector3 GetGhost2Direction(Vector3[] possibleDirections)
     {
-        // 优先选择不会导致震荡的方向
         List<Vector3> safeDirections = new List<Vector3>();
         List<Vector3> riskyDirections = new List<Vector3>();
         
@@ -517,10 +569,9 @@ public class GhostController : MonoBehaviour
             }
         }
         
-        // 优先在安全方向中选择
         Vector3[] candidates = safeDirections.Count > 0 ? safeDirections.ToArray() : riskyDirections.ToArray();
         
-        if (candidates.Length == 0) return possibleDirections[0];
+        if (candidates.Length == 0) return possibleDirections.Length > 0 ? possibleDirections[0] : Vector3.up;
         
         Vector3 playerPos = pacStudent.transform.position;
         
@@ -544,43 +595,41 @@ public class GhostController : MonoBehaviour
     
     private Vector3 GetRandomDirection(Vector3[] possibleDirections)
     {
-        // 幽灵3的随机移动也要避免立即回头
-        List<Vector3> nonReverseDirections = new List<Vector3>();
-        
-        foreach (Vector3 direction in possibleDirections)
+        if (possibleDirections.Length > 0)
         {
-            if (direction != -lastDirection)
+            return possibleDirections[Random.Range(0, possibleDirections.Length)];
+        }
+        
+        return Vector3.up;
+    }
+    
+    private bool HasMultipleExits(Vector2Int gridPos, Vector3 incomingDirection)
+    {
+        Vector3[] checkDirections = { Vector3.up, Vector3.down, Vector3.left, Vector3.right };
+        int validDirections = 0;
+        
+        foreach (Vector3 dir in checkDirections)
+        {
+            Vector2Int testGridPos = gridPos + WorldToGridDirection(dir);
+            if (IsPositionWalkable(testGridPos))
             {
-                nonReverseDirections.Add(direction);
+                validDirections++;
+                if (validDirections > 1) return true;
             }
         }
         
-        // 优先选择非反向方向
-        if (nonReverseDirections.Count > 0)
-        {
-            return nonReverseDirections[Random.Range(0, nonReverseDirections.Count)];
-        }
-        
-        // 只有反向可选时才选择反向
-        return possibleDirections[Random.Range(0, possibleDirections.Length)];
+        return false;
     }
     
-    // 位置历史记录方法
     private void RecordPosition(Vector2Int gridPos)
     {
         positionHistory.Enqueue(gridPos);
-        if (positionHistory.Count > HISTORY_SIZE)
+        while (positionHistory.Count > HISTORY_SIZE)
         {
             positionHistory.Dequeue();
         }
     }
     
-    private bool IsPositionInHistory(Vector2Int gridPos)
-    {
-        return positionHistory.Contains(gridPos);
-    }
-    
-    // 其他辅助方法
     private Vector2Int MapToOriginalQuadrant(Vector2Int fullPos)
     {
         int x = fullPos.x;
@@ -626,45 +675,100 @@ public class GhostController : MonoBehaviour
         return Vector2Int.zero;
     }
     
-    private void UpdateAnimation()
+    private Vector3 RoundToGridDirection(Vector3 direction)
     {
-        if (animator == null) return;
-        animator.SetBool("IsMoving", isMoving || currentState == GhostState.Dead);
+        float absX = Mathf.Abs(direction.x);
+        float absY = Mathf.Abs(direction.y);
         
-        Vector3 direction = currentState == GhostState.Dead ? 
-            (new Vector3((SPAWN_MIN_X + SPAWN_MAX_X) / 2, (SPAWN_MIN_Y + SPAWN_MAX_Y) / 2, 0) - transform.position).normalized : 
-            currentDirection;
-            
-        animator.SetFloat("MoveX", direction.x);
-        animator.SetFloat("MoveY", direction.y);
+        if (absX > absY)
+        {
+            return new Vector3(Mathf.Sign(direction.x), 0, 0);
+        }
+        else
+        {
+            return new Vector3(0, Mathf.Sign(direction.y), 0);
+        }
     }
     
-    public void SetNormal() { currentState = GhostState.Normal; currentSpeed = normalSpeed; UpdateAnimator(); }
-    public void SetScared() { currentState = GhostState.Scared; currentSpeed = scaredSpeed; UpdateAnimator(); }
-    public void SetRecovering() { currentState = GhostState.Recovering; currentSpeed = recoveringSpeed; UpdateAnimator(); }
-    public void SetDead() { currentState = GhostState.Dead; currentSpeed = deadSpeed; UpdateAnimator(); }
-    public void Die() { SetDead(); }
+    private void UpdateAnimation()
+{
+    if (animator == null) return;
     
-    private void UpdateAnimator()
+    // 设置移动状态
+    animator.SetBool("IsMoving", isMoving || currentState == GhostState.Dead);
+    
+    // 设置方向
+    Vector3 direction = currentState == GhostState.Dead ? 
+        (new Vector3((SPAWN_MIN_X + SPAWN_MAX_X) / 2, (SPAWN_MIN_Y + SPAWN_MAX_Y) / 2, 0) - transform.position).normalized : 
+        currentDirection;
+        
+    animator.SetFloat("MoveX", direction.x);
+    animator.SetFloat("MoveY", direction.y);
+    
+    // 设置状态参数 - 确保互斥
+    animator.SetBool("Normal", currentState == GhostState.Normal);
+    animator.SetBool("Scared", currentState == GhostState.Scared);
+    animator.SetBool("Recovering", currentState == GhostState.Recovering);
+    animator.SetBool("Dead", currentState == GhostState.Dead);
+    
+    Debug.Log($"Ghost {ghostID} 动画更新 - 状态: {currentState}, 移动: {isMoving}");
+}
+    
+    public void SetNormal() { 
+        currentState = GhostState.Normal; 
+        currentSpeed = normalSpeed; 
+        Debug.Log($"Ghost {ghostID} 设置为正常状态");
+    }
+    
+    public void SetScared() { 
+        currentState = GhostState.Scared; 
+        currentSpeed = scaredSpeed; 
+        Debug.Log($"Ghost {ghostID} 设置为恐惧状态");
+    }
+    
+    public void SetRecovering() { 
+        currentState = GhostState.Recovering; 
+        currentSpeed = recoveringSpeed; 
+        Debug.Log($"Ghost {ghostID} 设置为恢复状态");
+    }
+    
+    public void SetDead() { 
+    currentState = GhostState.Dead; 
+    currentSpeed = deadSpeed; 
+    
+    // 强制设置动画参数
+    if (animator != null)
     {
-        if (animator == null) return;
-        animator.SetBool("Normal", currentState == GhostState.Normal);
-        animator.SetBool("Scared", currentState == GhostState.Scared);
-        animator.SetBool("Recovering", currentState == GhostState.Recovering);
-        animator.SetBool("Dead", currentState == GhostState.Dead);
+        animator.SetBool("Dead", true);
+        animator.SetBool("Normal", false);
+        animator.SetBool("Scared", false);
+        animator.SetBool("Recovering", false);
+        animator.SetBool("IsMoving", true);
     }
+    
+    Debug.Log($"Ghost {ghostID} 设置为死亡状态");
+}
+    
+    public void Die() 
+{ 
+    SetDead(); 
+    Debug.Log($"Ghost {ghostID} 死亡");
+    
+    // 确保立即更新动画
+    UpdateAnimation();
+}
     
     public void ResetToInitialPosition()
     {
+        Debug.Log($"Ghost {ghostID} 重置到初始位置: {initialPosition}");
         transform.position = initialPosition;
         currentGridPos = WorldToGridPosition(initialPosition);
         hasExitedSpawn = false;
+        isMoving = false;
         
-        // 清空位置历史
         positionHistory.Clear();
         RecordPosition(currentGridPos);
         
-        // 重新设置初始方向
         if (ghostID == 1 || ghostID == 3)
         {
             currentDirection = Vector3.up;
