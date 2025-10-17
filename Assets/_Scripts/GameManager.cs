@@ -56,7 +56,6 @@ public class GameManager : MonoBehaviour
     
     private void Start()
     {    
-        
         audioSource = GetComponent<AudioSource>();
         if (audioSource == null)
         {
@@ -86,13 +85,16 @@ public class GameManager : MonoBehaviour
         GameObject[] pellets = GameObject.FindGameObjectsWithTag("Pellet");
         GameObject[] powerPills = GameObject.FindGameObjectsWithTag("PowerPill");
         totalPellets = pellets.Length + powerPills.Length;
+        collectedPellets = 0;
     }
     
     public void OnPelletCollected(bool isPowerPill = false)
     {
+        if (isGameOver || isDeathSequenceActive || !isGameRunning) return;
+        
         collectedPellets++;
         
-        if (collectedPellets >= totalPellets)
+        if (collectedPellets >= 223)
         {
             StartCoroutine(GameOverSequence(true));
         }
@@ -329,11 +331,9 @@ public class GameManager : MonoBehaviour
         isGameOver = true;
         isGameRunning = false;
         
-        if (playerController != null)
-        {
-            playerController.enabled = false;
-        }
-        SetGhostsActive(false);
+        StopAllMovement();
+        
+        DisableUIButtons();
         
         UpdateGameTimerUI();
         
@@ -344,14 +344,42 @@ public class GameManager : MonoBehaviour
         
         ShowGameOverUI(isWin);
         
-        if (HighScoreManager.Instance != null)
-        {
-            HighScoreManager.Instance.CheckAndSaveHighScore(score, gameTime);
-        }
+        SaveHighScoreIfNeeded();
         
         yield return new WaitForSeconds(gameOverDisplayDuration);
         
         ReturnToStartScene();
+    }
+    
+    private void StopAllMovement()
+    {
+        if (playerController != null)
+        {
+            playerController.enabled = false;
+        }
+        
+        GhostController[] ghosts = FindObjectsOfType<GhostController>();
+        foreach (GhostController ghost in ghosts)
+        {
+            ghost.enabled = false;
+        }
+    }
+    
+    private void DisableUIButtons()
+    {
+        Button[] allButtons = FindObjectsOfType<Button>();
+        foreach (Button button in allButtons)
+        {
+            button.interactable = false;
+        }
+    }
+    
+    private void SaveHighScoreIfNeeded()
+    {
+        if (HighScoreManager.Instance != null)
+        {
+            HighScoreManager.Instance.CheckAndSaveHighScore(score, gameTime);
+        }
     }
     
     private void ShowGameOverUI(bool isWin)
@@ -362,11 +390,6 @@ public class GameManager : MonoBehaviour
             
             string resultText = isWin ? "VICTORY!" : "GAME OVER";
             string timeString = FormatTime(gameTime);
-            
-            if (gameOverText != null)
-            {
-                gameOverText.text = $"{resultText}\nFinal Score: {score}\nTime: {timeString}";
-            }
             
             if (blockingImage != null)
             {
@@ -394,7 +417,14 @@ public class GameManager : MonoBehaviour
         UpdateUI();
         UpdateLivesDisplay();
         
-        StartCoroutine(DeathSequence());
+        if (lives <= 0)
+        {
+            StartCoroutine(GameOverSequence(false));
+        }
+        else
+        {
+            StartCoroutine(DeathSequence());
+        }
     }
 
     private void UpdateGameTimerUI()
@@ -409,20 +439,20 @@ public class GameManager : MonoBehaviour
     }
     
     private void UpdateGhostScaredTimerUI()
-{
-    if (ghostScaredTimerText != null)
     {
-        if (isPowerPillActive && powerPillTimer > 0)
+        if (ghostScaredTimerText != null)
         {
-            ghostScaredTimerText.text = Mathf.CeilToInt(powerPillTimer).ToString();
-            ghostScaredTimerText.gameObject.SetActive(true);
-        }
-        else
-        {
-            ghostScaredTimerText.gameObject.SetActive(false);
+            if (isPowerPillActive && powerPillTimer > 0)
+            {
+                ghostScaredTimerText.text = Mathf.CeilToInt(powerPillTimer).ToString();
+                ghostScaredTimerText.gameObject.SetActive(true);
+            }
+            else
+            {
+                ghostScaredTimerText.gameObject.SetActive(false);
+            }
         }
     }
-}
     
     private void UpdateLivesDisplay()
     {

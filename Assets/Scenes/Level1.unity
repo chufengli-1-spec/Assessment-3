@@ -16095,7 +16095,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -0.08905029, y: 0}
+  m_AnchoredPosition: {x: -0.08911133, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &728196323
@@ -22413,7 +22413,7 @@ MonoBehaviour:
   startingLives: 3
   deathSequenceDuration: 3
   gameOverDisplayDuration: 3
-  playerController: {fileID: 0}
+  playerController: {fileID: 1377041095}
 --- !u!1001 &989079141
 PrefabInstance:
   m_ObjectHideFlags: 0
