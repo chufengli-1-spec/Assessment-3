@@ -41253,13 +41253,9 @@ MonoBehaviour:
   normalSpeed: 2.7
   scaredSpeed: 1.35
   recoveringSpeed: 1.35
-  deadSpeed: 1.35
-  ghostID: 1
+  deadSpeed: 1.5
   animator: {fileID: 1677285361}
-  lerpTime: 0.3
-  wallLayer:
-    serializedVersion: 2
-    m_Bits: 8
+  ghostID: 1
 --- !u!58 &1677285359
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -43037,13 +43033,9 @@ MonoBehaviour:
   normalSpeed: 2.7
   scaredSpeed: 1.35
   recoveringSpeed: 1.35
-  deadSpeed: 1.35
-  ghostID: 2
+  deadSpeed: 1.5
   animator: {fileID: 1759346071}
-  lerpTime: 0.3
-  wallLayer:
-    serializedVersion: 2
-    m_Bits: 8
+  ghostID: 2
 --- !u!58 &1759346069
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -44997,13 +44989,9 @@ MonoBehaviour:
   normalSpeed: 2.7
   scaredSpeed: 1.35
   recoveringSpeed: 1.35
-  deadSpeed: 1.35
-  ghostID: 4
+  deadSpeed: 1.5
   animator: {fileID: 1841868859}
-  lerpTime: 0.3
-  wallLayer:
-    serializedVersion: 2
-    m_Bits: 8
+  ghostID: 4
 --- !u!50 &1841868857
 Rigidbody2D:
   serializedVersion: 4
@@ -50287,13 +50275,9 @@ MonoBehaviour:
   normalSpeed: 2.7
   scaredSpeed: 1.35
   recoveringSpeed: 1.35
-  deadSpeed: 1.35
-  ghostID: 3
+  deadSpeed: 1.5
   animator: {fileID: 2059931225}
-  lerpTime: 0.3
-  wallLayer:
-    serializedVersion: 2
-    m_Bits: 8
+  ghostID: 3
 --- !u!50 &2059931223
 Rigidbody2D:
   serializedVersion: 4
