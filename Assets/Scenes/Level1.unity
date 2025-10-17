@@ -5931,11 +5931,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1418343370966090822, guid: 062341bef3b2bba498c9b750fe76f803, type: 3}
       propertyPath: m_LocalScale.x
-      value: 7.1151
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 1418343370966090822, guid: 062341bef3b2bba498c9b750fe76f803, type: 3}
       propertyPath: m_LocalScale.y
-      value: 5.2199
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 1418343370966090822, guid: 062341bef3b2bba498c9b750fe76f803, type: 3}
       propertyPath: m_LocalPosition.x
@@ -13550,19 +13550,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1418343370966090822, guid: 062341bef3b2bba498c9b750fe76f803, type: 3}
       propertyPath: m_LocalScale.x
-      value: 6.7895
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 1418343370966090822, guid: 062341bef3b2bba498c9b750fe76f803, type: 3}
       propertyPath: m_LocalScale.y
-      value: 6.325
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 1418343370966090822, guid: 062341bef3b2bba498c9b750fe76f803, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -4.64
+      value: -4.46
       objectReference: {fileID: 0}
     - target: {fileID: 1418343370966090822, guid: 062341bef3b2bba498c9b750fe76f803, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -4.91
+      value: -4.74
       objectReference: {fileID: 0}
     - target: {fileID: 1418343370966090822, guid: 062341bef3b2bba498c9b750fe76f803, type: 3}
       propertyPath: m_LocalPosition.z
@@ -21119,11 +21119,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1418343370966090822, guid: 062341bef3b2bba498c9b750fe76f803, type: 3}
       propertyPath: m_LocalScale.x
-      value: 6.824234
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 1418343370966090822, guid: 062341bef3b2bba498c9b750fe76f803, type: 3}
       propertyPath: m_LocalScale.y
-      value: 6.812466
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 1418343370966090822, guid: 062341bef3b2bba498c9b750fe76f803, type: 3}
       propertyPath: m_LocalPosition.x
@@ -41250,10 +41250,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 95b055c89e8adfb4ba5344862ea249ad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  normalSpeed: 2
-  scaredSpeed: 1.5
-  recoveringSpeed: 1.8
-  animator: {fileID: 0}
+  normalSpeed: 2.7
+  scaredSpeed: 1.35
+  recoveringSpeed: 1.35
+  deadSpeed: 1.35
+  ghostID: 1
+  animator: {fileID: 1677285361}
+  lerpTime: 0.3
+  wallLayer:
+    serializedVersion: 2
+    m_Bits: 8
 --- !u!58 &1677285359
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -41317,6 +41323,11 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!95 &1677285361 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 399901478543243763, guid: 062341bef3b2bba498c9b750fe76f803, type: 3}
+  m_PrefabInstance: {fileID: 264389024}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1684121973
 GameObject:
   m_ObjectHideFlags: 0
@@ -43023,10 +43034,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 95b055c89e8adfb4ba5344862ea249ad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  normalSpeed: 2
-  scaredSpeed: 1.5
-  recoveringSpeed: 1.8
-  animator: {fileID: 0}
+  normalSpeed: 2.7
+  scaredSpeed: 1.35
+  recoveringSpeed: 1.35
+  deadSpeed: 1.35
+  ghostID: 2
+  animator: {fileID: 1759346071}
+  lerpTime: 0.3
+  wallLayer:
+    serializedVersion: 2
+    m_Bits: 8
 --- !u!58 &1759346069
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -43090,6 +43107,11 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!95 &1759346071 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 399901478543243763, guid: 062341bef3b2bba498c9b750fe76f803, type: 3}
+  m_PrefabInstance: {fileID: 934546505}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1760589136
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -44972,10 +44994,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 95b055c89e8adfb4ba5344862ea249ad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  normalSpeed: 2
-  scaredSpeed: 1.5
-  recoveringSpeed: 1.8
-  animator: {fileID: 0}
+  normalSpeed: 2.7
+  scaredSpeed: 1.35
+  recoveringSpeed: 1.35
+  deadSpeed: 1.35
+  ghostID: 4
+  animator: {fileID: 1841868859}
+  lerpTime: 0.3
+  wallLayer:
+    serializedVersion: 2
+    m_Bits: 8
 --- !u!50 &1841868857
 Rigidbody2D:
   serializedVersion: 4
@@ -45039,6 +45067,11 @@ CircleCollider2D:
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
   m_Radius: 0.15999998
+--- !u!95 &1841868859 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 399901478543243763, guid: 062341bef3b2bba498c9b750fe76f803, type: 3}
+  m_PrefabInstance: {fileID: 627996509}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1843264768
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -50251,10 +50284,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 95b055c89e8adfb4ba5344862ea249ad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  normalSpeed: 2
-  scaredSpeed: 1.5
-  recoveringSpeed: 1.8
-  animator: {fileID: 0}
+  normalSpeed: 2.7
+  scaredSpeed: 1.35
+  recoveringSpeed: 1.35
+  deadSpeed: 1.35
+  ghostID: 3
+  animator: {fileID: 2059931225}
+  lerpTime: 0.3
+  wallLayer:
+    serializedVersion: 2
+    m_Bits: 8
 --- !u!50 &2059931223
 Rigidbody2D:
   serializedVersion: 4
@@ -50318,6 +50357,11 @@ CircleCollider2D:
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
   m_Radius: 0.16000001
+--- !u!95 &2059931225 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 399901478543243763, guid: 062341bef3b2bba498c9b750fe76f803, type: 3}
+  m_PrefabInstance: {fileID: 1855332793}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2061739021
 PrefabInstance:
   m_ObjectHideFlags: 0
