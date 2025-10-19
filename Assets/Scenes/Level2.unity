@@ -41254,8 +41254,8 @@ MonoBehaviour:
   scaredSpeed: 1.35
   recoveringSpeed: 1.35
   deadSpeed: 1.5
-  animator: {fileID: 1677285361}
   ghostID: 1
+  animator: {fileID: 1677285361}
 --- !u!58 &1677285359
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -43034,8 +43034,8 @@ MonoBehaviour:
   scaredSpeed: 1.35
   recoveringSpeed: 1.35
   deadSpeed: 1.5
-  animator: {fileID: 1759346071}
   ghostID: 2
+  animator: {fileID: 1759346071}
 --- !u!58 &1759346069
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -44990,8 +44990,8 @@ MonoBehaviour:
   scaredSpeed: 1.35
   recoveringSpeed: 1.35
   deadSpeed: 1.5
-  animator: {fileID: 1841868859}
   ghostID: 4
+  animator: {fileID: 1841868859}
 --- !u!50 &1841868857
 Rigidbody2D:
   serializedVersion: 4
@@ -47450,7 +47450,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Level 1
+  m_Text: Level 2
 --- !u!222 &1934832812
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -50276,8 +50276,8 @@ MonoBehaviour:
   scaredSpeed: 1.35
   recoveringSpeed: 1.35
   deadSpeed: 1.5
-  animator: {fileID: 2059931225}
   ghostID: 3
+  animator: {fileID: 2059931225}
 --- !u!50 &2059931223
 Rigidbody2D:
   serializedVersion: 4

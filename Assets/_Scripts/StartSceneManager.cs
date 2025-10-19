@@ -8,7 +8,7 @@ public class StartSceneManager : MonoBehaviour
     public Button level2Button;
 
     private string level1SceneName = "Level1";
-    private string level2SceneName = "DesignIterationScene";
+    private string level2SceneName = "Level2";
 
     void Start()
     {
