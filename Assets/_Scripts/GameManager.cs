@@ -490,7 +490,7 @@ public class GameManager : MonoBehaviour
     {
         SceneManager.LoadScene("StartScene");
     }
-    
+
     public void RestartGame()
     {
         Time.timeScale = 1;
@@ -503,26 +503,26 @@ public class GameManager : MonoBehaviour
         isPowerPillActive = false;
         isDeathSequenceActive = false;
         isCountdownActive = false;
-        
+
         UpdateUI();
         UpdateLivesDisplay();
         UpdateGameTimerUI();
         UpdateGhostScaredTimerUI();
-        
+
         if (gameOverPanel != null)
             gameOverPanel.SetActive(false);
         if (blockingImage != null)
             blockingImage.SetActive(false);
         if (countdownText != null)
             countdownText.gameObject.SetActive(false);
-        
+
         PacStudentController pacStudent = FindObjectOfType<PacStudentController>();
         if (pacStudent != null)
         {
             pacStudent.Respawn();
             pacStudent.enabled = false;
         }
-        
+
         GhostController[] ghosts = FindObjectsOfType<GhostController>();
         foreach (GhostController ghost in ghosts)
         {
@@ -530,12 +530,38 @@ public class GameManager : MonoBehaviour
             ghost.SetNormal();
             ghost.enabled = false;
         }
-        
+
         CountTotalPellets();
-        
+
         StartGameCountdown();
     }
     
+    public void PlayerTakeDamage(int damageAmount)
+{
+    if (isDeathSequenceActive || isGameOver || !isGameRunning || isCountdownActive)
+        return;
+    
+    // 扣减生命值
+    lives -= damageAmount;
+    UpdateUI();
+    UpdateLivesDisplay();
+    
+    Debug.Log($"玩家受到 {damageAmount} 点伤害，剩余生命: {lives}");
+    
+    // 检查是否游戏结束
+    if (lives <= 0)
+    {
+        lives = 0; // 确保生命值不为负
+        StartCoroutine(GameOverSequence(false));
+    }
+    else
+    {
+        // 改为调用完整的死亡序列，而不是受伤效果
+        StartCoroutine(DeathSequence());
+    }
+}
+
+
     public bool IsGameRunning()
     {
         return isGameRunning && !isCountdownActive && !isGameOver;

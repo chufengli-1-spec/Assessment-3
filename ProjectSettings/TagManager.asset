@@ -10,6 +10,7 @@ TagManager:
   - PowerPill
   - Ghost
   - Wing
+  - Bomb
   layers:
   - Default
   - TransparentFX
