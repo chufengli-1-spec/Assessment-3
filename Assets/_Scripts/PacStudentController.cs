@@ -24,6 +24,13 @@ public class PacStudentController : MonoBehaviour
     [Header("References")]
     public GameManager gameManager;
 
+    [Header("Speed Boost Settings")]
+    public float normalSpeed = 3f;
+    public float boostSpeed = 6f;
+    public float currentSpeed;
+    private bool isSpeedBoosted = false;
+    private Coroutine speedBoostCoroutine;
+
     private KeyCode lastInput;
     private KeyCode currentInput;
 
@@ -76,6 +83,8 @@ public class PacStudentController : MonoBehaviour
         levelGenerator = FindObjectOfType<LevelGenerator>();
         animator = GetComponent<Animator>();
         audioSource = GetComponent<AudioSource>();
+
+        currentSpeed = normalSpeed;
 
         if (audioSource == null)
             audioSource = gameObject.AddComponent<AudioSource>();
@@ -296,24 +305,25 @@ public class PacStudentController : MonoBehaviour
     }
 
     private void ContinueLerping()
+{
+    // 使用 currentSpeed 而不是固定的 moveSpeed
+    lerpTime += Time.deltaTime * currentSpeed;
+    if (lerpTime > 1f) lerpTime = 1f;
+
+    transform.position = Vector3.Lerp(startPosition, targetPosition, lerpTime);
+
+    if (lerpTime >= 1f)
     {
-        lerpTime += Time.deltaTime * moveSpeed;
-        if (lerpTime > 1f) lerpTime = 1f;
+        transform.position = targetPosition;
+        currentGridPos = targetGridPos;
+        lastValidPosition = targetPosition;
+        isLerping = false;
 
-        transform.position = Vector3.Lerp(startPosition, targetPosition, lerpTime);
-
-        if (lerpTime >= 1f)
-        {
-            transform.position = targetPosition;
-            currentGridPos = targetGridPos;
-            lastValidPosition = targetPosition;
-            isLerping = false;
-
-            Vector2Int currentInputDirection = GetDirectionFromKeyCode(currentInput);
-            if (IsPositionWalkable(currentGridPos + currentInputDirection))
-                StartLerping(currentInputDirection);
-        }
+        Vector2Int currentInputDirection = GetDirectionFromKeyCode(currentInput);
+        if (IsPositionWalkable(currentGridPos + currentInputDirection))
+            StartLerping(currentInputDirection);
     }
+}
 
     private void UpdateAnimationAndAudio()
     {
@@ -678,17 +688,68 @@ public class PacStudentController : MonoBehaviour
     }
 
     public void Respawn()
+{
+    isDead = false;
+    
+    // 重置速度状态
+    if (speedBoostCoroutine != null)
     {
-        isDead = false;
-        transform.position = new Vector3(-19f, 9f, 0f);
-        currentGridPos = WorldToGridPosition(transform.position);
-        lastValidPosition = transform.position;
-
-        lastInput = KeyCode.D;
-        currentInput = KeyCode.D;
-
-        UpdateAnimationDirection();
+        StopCoroutine(speedBoostCoroutine);
+        speedBoostCoroutine = null;
     }
+    isSpeedBoosted = false;
+    currentSpeed = normalSpeed;
+    
+    // 重置颜色（如果有改变）
+    SpriteRenderer renderer = GetComponent<SpriteRenderer>();
+    if (renderer != null)
+    {
+        renderer.color = Color.white;
+    }
+    
+    transform.position = new Vector3(-19f, 9f, 0f);
+    currentGridPos = WorldToGridPosition(transform.position);
+    lastValidPosition = transform.position;
+
+    lastInput = KeyCode.D;
+    currentInput = KeyCode.D;
+
+    UpdateAnimationDirection();
+}
+
+    public void ActivateSpeedBoost(float duration)
+{
+    if (speedBoostCoroutine != null)
+    {
+        StopCoroutine(speedBoostCoroutine);
+    }
+    speedBoostCoroutine = StartCoroutine(SpeedBoostCoroutine(duration));
+}
+
+private IEnumerator SpeedBoostCoroutine(float duration)
+{
+    isSpeedBoosted = true;
+    currentSpeed = boostSpeed;
+    
+    // 可选：添加视觉反馈
+    SpriteRenderer renderer = GetComponent<SpriteRenderer>();
+    Color originalColor = renderer.color;
+    renderer.color = Color.red; // 加速时变成黄色
+    
+    yield return new WaitForSeconds(duration);
+    
+    // 恢复原状
+    currentSpeed = normalSpeed;
+    isSpeedBoosted = false;
+    renderer.color = originalColor;
+    
+    speedBoostCoroutine = null;
+}
+
+  public bool IsSpeedBoosted()
+  {
+    return isSpeedBoosted;
+  }
 
     public KeyCode GetCurrentDirection() { return currentInput; }
     public Vector2Int GetCurrentGridPosition() { return currentGridPos; }

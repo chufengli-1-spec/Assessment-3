@@ -10533,7 +10533,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.010925, y: -0.0024872}
+  m_AnchoredPosition: {x: 4711, y: -21.325}
   m_SizeDelta: {x: 1920.2, y: 1080}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &469428959
@@ -16095,7 +16095,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -0.08911133, y: 0}
+  m_AnchoredPosition: {x: -2052, y: -21.13501}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &728196323
@@ -30157,6 +30157,9 @@ MonoBehaviour:
   teleportSound: {fileID: 0}
   teleportParticle: {fileID: 0}
   gameManager: {fileID: 988711110}
+  normalSpeed: 3
+  boostSpeed: 6
+  currentSpeed: 0
 --- !u!4 &1377041097 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5661856524613467232, guid: 06474b2c53df7654fb703c786fadf828, type: 3}
@@ -46417,6 +46420,56 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2598711429586087508, guid: 8d5b5a82a84e8704d88742003b0de18e, type: 3}
   m_PrefabInstance: {fileID: 1887245796}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1891298621
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1891298623}
+  - component: {fileID: 1891298622}
+  m_Layer: 0
+  m_Name: WingManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1891298622
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1891298621}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50b0320d6a620f64a9a07fce7fe0dd52, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  spawnDelay: 10
+  moveSpeed: 0.3
+  levelBoundsOffset: 1
+  wingPrefab: {fileID: 4297152553690261963, guid: 093aaea95c592ef4cbb9adc5ec3cb063, type: 3}
+  levelGenerator: {fileID: 1894538233}
+  levelCenter: {fileID: 0}
+--- !u!4 &1891298623
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1891298621}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -13.676354, y: 10.353943, z: 29.32608}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1891422446
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -51937,3 +51990,4 @@ SceneRoots:
   - {fileID: 786079545}
   - {fileID: 988711109}
   - {fileID: 2053671185}
+  - {fileID: 1891298623}
