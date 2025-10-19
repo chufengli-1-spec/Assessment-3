@@ -41,7 +41,6 @@ public class WingCollisionHandler : MonoBehaviour
                 wingCollider.enabled = false;
             }
             
-            // 获取玩家控制器并应用加速效果
             PacStudentController playerController = other.GetComponent<PacStudentController>();
             if (playerController == null)
             {
@@ -50,13 +49,9 @@ public class WingCollisionHandler : MonoBehaviour
             
             if (playerController != null)
             {
-                playerController.ActivateSpeedBoost(5f); // 加速5秒
+                playerController.ActivateSpeedBoost(5f); 
             }
             
-            // 播放收集音效（可选）
-            // AudioSource.PlayClipAtPoint(collectSound, transform.position);
-            
-            // 显示收集特效（可选）
             ShowCollectEffect();
             
             if (wingController != null)
@@ -72,10 +67,6 @@ public class WingCollisionHandler : MonoBehaviour
 
     private void ShowCollectEffect()
     {
-        // 这里可以添加粒子效果或动画
-        // 例如：Instantiate(collectEffect, transform.position, Quaternion.identity);
-        
-        // 临时：改变颜色然后消失
         SpriteRenderer renderer = GetComponent<SpriteRenderer>();
         if (renderer != null)
         {

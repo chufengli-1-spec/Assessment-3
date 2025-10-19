@@ -40,7 +40,6 @@ public class BombCollisionHandler : MonoBehaviour
                 bombCollider.enabled = false;
             }
             
-            // 对玩家造成伤害
             PacStudentController playerController = other.GetComponent<PacStudentController>();
             if (playerController == null)
             {
@@ -49,15 +48,13 @@ public class BombCollisionHandler : MonoBehaviour
             
             if (playerController != null)
             {
-                // 调用游戏管理器扣血
                 GameManager gameManager = FindObjectOfType<GameManager>();
                 if (gameManager != null)
                 {
-                    gameManager.PlayerTakeDamage(1); // 扣一格血
+                    gameManager.PlayerTakeDamage(1); 
                 }
             }
             
-            // 播放爆炸音效和特效
             ShowExplosionEffect();
             
             if (bombController != null)
@@ -73,10 +70,6 @@ public class BombCollisionHandler : MonoBehaviour
 
     private void ShowExplosionEffect()
     {
-        // 这里可以添加爆炸粒子效果
-        // 例如：Instantiate(explosionEffect, transform.position, Quaternion.identity);
-        
-        // 临时：改变颜色表示爆炸
         SpriteRenderer renderer = GetComponent<SpriteRenderer>();
         if (renderer != null)
         {

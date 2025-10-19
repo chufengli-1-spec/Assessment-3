@@ -3,7 +3,7 @@ using System.Collections;
 
 public class WingController : MonoBehaviour
 {
-    public float spawnDelay = 10f; // 比樱桃稍长的生成间隔
+    public float spawnDelay = 10f;
     public float moveSpeed = 2f; 
     public float levelBoundsOffset = 1f; 
     public GameObject wingPrefab;
@@ -65,14 +65,12 @@ public class WingController : MonoBehaviour
         currentWing.name = "SpeedWing";
         currentWing.tag = "Wing";
         
-        // 设置渲染排序
         SpriteRenderer spriteRenderer = currentWing.GetComponent<SpriteRenderer>();
         if (spriteRenderer != null)
         {
             spriteRenderer.sortingOrder = 100; 
         }
 
-        // 添加碰撞器
         Collider2D collider = currentWing.GetComponent<Collider2D>();
         if (collider == null)
         {
@@ -80,7 +78,6 @@ public class WingController : MonoBehaviour
         }
         collider.isTrigger = true;
 
-        // 添加刚体
         Rigidbody2D rb = currentWing.GetComponent<Rigidbody2D>();
         if (rb == null)
         {
@@ -89,7 +86,6 @@ public class WingController : MonoBehaviour
         rb.isKinematic = true;
         rb.simulated = true;
 
-        // 添加碰撞处理器
         WingCollisionHandler wingCollision = currentWing.GetComponent<WingCollisionHandler>();
         if (wingCollision == null)
         {

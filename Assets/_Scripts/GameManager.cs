@@ -6,33 +6,27 @@ using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
-    [Header("UI Elements")]
     public Text scoreText;
     public GameObject livesContainer;
     public Text gameTimerText;
     public Text ghostScaredTimerText;
     public GameObject ghostTimerPanel;
     
-    [Header("Game Start UI")]
     public GameObject blockingImage;
     public TextMeshProUGUI countdownText;
     public float countdownInterval = 1f;
     
-    [Header("Game Over UI")]
     public GameObject gameOverPanel;
     public Text gameOverText;
     
-    [Header("Audio")]
     public AudioClip normalMusic;
     public AudioClip scaredMusic;
     public AudioClip ghostEatenMusic;
     
-    [Header("Game Settings")]
     public int startingLives = 3;
     public float deathSequenceDuration = 3f;
     public float gameOverDisplayDuration = 3f;
     
-    [Header("Game References")]
     public PacStudentController playerController;
     
     private int score = 0;
@@ -388,9 +382,6 @@ public class GameManager : MonoBehaviour
         {
             gameOverPanel.SetActive(true);
             
-            string resultText = isWin ? "VICTORY!" : "GAME OVER";
-            string timeString = FormatTime(gameTime);
-            
             if (blockingImage != null)
             {
                 blockingImage.SetActive(true);
@@ -537,30 +528,24 @@ public class GameManager : MonoBehaviour
     }
     
     public void PlayerTakeDamage(int damageAmount)
-{
-    if (isDeathSequenceActive || isGameOver || !isGameRunning || isCountdownActive)
-        return;
-    
-    // 扣减生命值
-    lives -= damageAmount;
-    UpdateUI();
-    UpdateLivesDisplay();
-    
-    Debug.Log($"玩家受到 {damageAmount} 点伤害，剩余生命: {lives}");
-    
-    // 检查是否游戏结束
-    if (lives <= 0)
     {
-        lives = 0; // 确保生命值不为负
-        StartCoroutine(GameOverSequence(false));
+        if (isDeathSequenceActive || isGameOver || !isGameRunning || isCountdownActive)
+            return;
+        
+        lives -= damageAmount;
+        UpdateUI();
+        UpdateLivesDisplay();
+        
+        if (lives <= 0)
+        {
+            lives = 0;
+            StartCoroutine(GameOverSequence(false));
+        }
+        else
+        {
+            StartCoroutine(DeathSequence());
+        }
     }
-    else
-    {
-        // 改为调用完整的死亡序列，而不是受伤效果
-        StartCoroutine(DeathSequence());
-    }
-}
-
 
     public bool IsGameRunning()
     {

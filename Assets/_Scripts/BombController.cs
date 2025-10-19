@@ -3,7 +3,7 @@ using System.Collections;
 
 public class BombController : MonoBehaviour
 {
-    public float spawnDelay = 15f; // 生成间隔
+    public float spawnDelay = 15f;
     public float moveSpeed = 2f; 
     public float levelBoundsOffset = 1f; 
     public GameObject bombPrefab;
